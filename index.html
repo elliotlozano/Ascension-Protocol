@@ -269,6 +269,22 @@ body.D .g-sh{background:#5a9a9a28;color:#7ababa}
 </style>
 </head>
 <body class="D">
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div id="loginScreen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px">
+  <div style="margin-bottom:32px;text-align:center">
+    <div style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mu);font-weight:500;margin-bottom:8px">Ascension</div>
+    <div style="font-family:var(--fd);font-size:42px;font-weight:600;color:var(--t);line-height:1">Protocol</div>
+  </div>
+  <div style="width:100%;max-width:320px">
+    <input id="loginPass" type="password" placeholder="Password"
+      style="width:100%;background:var(--s);border:1.5px solid var(--b2);border-radius:14px;padding:16px 20px;color:var(--t);font-size:17px;outline:none;text-align:center;letter-spacing:.12em;margin-bottom:12px;transition:border-color .2s"
+      onfocus="this.style.borderColor='var(--a)'" onblur="this.style.borderColor='var(--b2)'">
+    <button id="loginBtn" onclick="doLogin()"
+      style="width:100%;padding:16px;background:var(--a);color:#1c1c1e;border-radius:14px;font-size:16px;font-weight:700;letter-spacing:.04em">Enter</button>
+    <div id="loginErr" style="text-align:center;margin-top:12px;font-size:13px;color:#c0504a;font-weight:500;min-height:18px"></div>
+  </div>
+</div>
+
 <div id="app">
 
 <!-- ═══════════════ PLANNER ═══════════════ -->
@@ -497,9 +513,13 @@ body.D .g-sh{background:#5a9a9a28;color:#7ababa}
           <span class="set-lbl">Current Date</span>
           <span class="set-val" id="currentDate"></span>
         </div>
-        <div class="set-row" style="border-bottom:none">
+        <div class="set-row">
           <span class="set-lbl">Saturday Split</span>
           <span class="set-val" id="satSplit"></span>
+        </div>
+        <div class="set-row" style="border-bottom:none">
+          <span class="set-lbl">Account</span>
+          <button onclick="signOut()" style="font-size:13px;color:#c0504a;font-weight:600;padding:6px 12px;background:rgba(192,80,74,.1);border-radius:8px">Sign Out</button>
         </div>
       </div>
       <button class="back-btn" onclick="closePage()">‹ Back to Account</button>
@@ -556,13 +576,14 @@ var DSUB = {
 var TAGS = {nutrition:'nu',gym:'gy',skincare:'sk',supplement:'su',hair:'ha',cardio:'ca',sleep:'sl',admin:'ad',shower:'sh'};
 var PROTO_START = new Date(2026,2,9); // March 9 2026 — Monday of Week 1
 
-var DEFAULT_MISSION = "You are 30 years old — a former competitive swimmer and runner who trained seriously through high school and college, then stepped away from structured fitness for nearly a decade. You are now returning with full intentionality, not just to get back in shape, but to build the best version of your body and health you have ever had.\n\nThe goal is an elite aesthetic: a V-taper physique with wide, capped shoulders, visible lats, a lean midsection, and the kind of conditioning that turns heads in a fitted shirt or at the beach. You weigh 150 lbs at 5'10\" with an athletic frame and a strong base to build from.\n\nBeyond the gym, you are treating your body as a complete system. Your skincare protocol — built around daily SPF, Vitamin C, and a progressive retinol schedule — is an investment in how you look at 35, 40, and beyond. Your hair loss protocol (finasteride + minoxidil) is started early enough to preserve what you have and potentially recover what you have lost. These are long-horizon decisions made by someone who plays the long game.\n\nRunning is part of the identity you are reclaiming. You are targeting 5K races — first to finish, then to compete. Sub-25 minutes by Month 12. Sub-22 by Month 18. The discipline of race training will carry over into every other area of this protocol.\n\nThis is a 3-year plan with milestones at every phase. The habits built in Year 1 determine everything that follows. You are not starting over — you are building on a foundation that never fully went away.";
+var DEFAULT_MISSION = "I'm 30. I have an athletic background, a decade of drift, and a clear picture of where I'm going.\n\nThis isn't about getting back in shape. It's about building something I've never actually finished — a body that performs at its ceiling, sustained by habits that don't slip. Training, nutrition, recovery, skincare. Every system running in parallel, nothing half-assed.\n\nThe physique goal is specific and I'm not apologizing for it. The running goal has a race on the calendar. The 3-year roadmap has milestones at every phase.\n\nYear 1 builds the foundation everything else stands on. I'm not starting over — I'm starting with more than I had the first time.";
 
 // ── Supabase ──────────────────────────────────────────────────
 var SB_URL = 'https://xxfvshxhkwsftcsgatwc.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4ZnZzaHhoa3dzZnRjc2dhdHdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjY5NzUsImV4cCI6MjA4ODgwMjk3NX0.zt4W9dV85d8ASAMZPMk-QQNhMZqnxMu3xznYpyXenGs';
-var USER_ID = 'primary';
 var syncTimer = null;
+var authToken = localStorage.getItem('ac_tok') || null;
+var authUserId = localStorage.getItem('ac_uid') || null;
 
 // ── State ─────────────────────────────────────────────────────
 var chk  = JSON.parse(localStorage.getItem('ac_chk')  || '{}');
@@ -590,6 +611,38 @@ function save() {
   sbWrite();
 }
 
+// ── Auth ─────────────────────────────────────────────────────
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + (authToken || SB_KEY)
+  };
+}
+function sbSignIn(email, password, cb) {
+  fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','apikey':SB_KEY},
+    body: JSON.stringify({email:email, password:password})
+  }).then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.access_token) {
+      authToken = d.access_token;
+      authUserId = d.user.id;
+      localStorage.setItem('ac_tok', authToken);
+      localStorage.setItem('ac_uid', authUserId);
+      cb(null);
+    } else {
+      cb(d.error_description || d.msg || 'Invalid credentials');
+    }
+  }).catch(function() { cb('Connection error'); });
+}
+function sbSignOut() {
+  authToken = null; authUserId = null;
+  localStorage.removeItem('ac_tok'); localStorage.removeItem('ac_uid');
+  showLoginScreen();
+}
+
 // ── Supabase sync ─────────────────────────────────────────────
 function setSyncUI(s) {
   var map = {ok:'✦ Synced', saving:'↑ Saving…', err:'⚠ Offline', loading:'↓ Loading…'};
@@ -598,27 +651,24 @@ function setSyncUI(s) {
   if (el) { el.textContent = map[s] || ''; el.style.color = col[s] || 'var(--mu)'; }
 }
 function sbWrite() {
+  if (!authToken) return;
   clearTimeout(syncTimer);
   syncTimer = setTimeout(function() {
     setSyncUI('saving');
     fetch(SB_URL + '/rest/v1/user_data?on_conflict=user_id', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SB_KEY,
-        'Authorization': 'Bearer ' + SB_KEY,
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({user_id:USER_ID, chk:chk, ovr:ovr, bio:bio, prs:prs, updated_at:new Date().toISOString()})
+      headers: Object.assign(authHeaders(), {'Prefer':'resolution=merge-duplicates'}),
+      body: JSON.stringify({user_id:authUserId, chk:chk, ovr:ovr, bio:bio, prs:prs, updated_at:new Date().toISOString()})
     }).then(function(r) {
       setSyncUI(r.ok ? 'ok' : 'err');
     }).catch(function() { setSyncUI('err'); });
   }, 800);
 }
 function sbLoad(cb) {
+  if (!authToken) { cb(); return; }
   setSyncUI('loading');
-  fetch(SB_URL + '/rest/v1/user_data?user_id=eq.' + USER_ID + '&select=*', {
-    headers: {'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY}
+  fetch(SB_URL + '/rest/v1/user_data?user_id=eq.' + authUserId + '&select=*', {
+    headers: authHeaders()
   }).then(function(r) { return r.json(); })
   .then(function(rows) {
     if (rows && rows.length) {
@@ -1403,14 +1453,52 @@ function syncToToday() {
   cD = DAYS[js === 0 ? 6 : js - 1]; // Mon=0 ... Sun=6
 }
 
+// ── Login screen ─────────────────────────────────────────────
+function showLoginScreen() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginPass').value = '';
+}
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+function doLogin() {
+  var pass = document.getElementById('loginPass').value;
+  var btn = document.getElementById('loginBtn');
+  var err = document.getElementById('loginErr');
+  if (!pass) return;
+  btn.textContent = '…'; btn.disabled = true; err.textContent = '';
+  sbSignIn('elliotlozano95@gmail.com', pass, function(e) {
+    btn.textContent = 'Enter'; btn.disabled = false;
+    if (e) { err.textContent = e === 'Invalid login credentials' ? 'Wrong password' : e; return; }
+    launchApp();
+  });
+}
+document.getElementById('loginPass').addEventListener('keydown', function(ev) {
+  if (ev.key === 'Enter') doLogin();
+});
+function launchApp() {
+  showApp();
+  syncToToday();
+  sbLoad(function() {
+    renderPlanner();
+    renderMetrics();
+    renderMission();
+  });
+}
+
+// ── Settings sign out ─────────────────────────────────────────
+function signOut() { sbSignOut(); }
+
 // ── Init ──────────────────────────────────────────────────────
 document.body.className = dark ? 'D' : 'L';
-renderMission();
-syncToToday();
-sbLoad(function() {
-  renderPlanner();
-  renderMetrics();
-});
+if (authToken) {
+  launchApp();
+} else {
+  showLoginScreen();
+}
 </script>
 </body>
 </html>
