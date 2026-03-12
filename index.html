@@ -691,8 +691,8 @@ function rGrocery(){
  document.getElementById("glWeekLabel").textContent=info.label;
  var items=buildGroceryList();
  var labels={protein:"Protein",produce:"Produce",grains:"Grains & Carbs",dairy:"Dairy & Eggs",pantry:"Pantry & Supplements"};
- var h="";
  var chkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4L3.5 6.5L9 1"/></svg>';
+ var h="";
  Object.keys(labels).forEach(function(cat){
   h+='<div class="gl-section"><div class="gl-sh">'+labels[cat]+'</div>';
   var customs=glc["custom."+cat]||[];
@@ -704,13 +704,17 @@ function rGrocery(){
    else unchecked.push({item:item,key:key});
   });
   unchecked.forEach(function(obj){
-   h+='<div class="gl-item"><div class="gl-check" onclick="toggleGlKey(''+obj.key+'')"></div><span class="gl-name">'+obj.item+'</span></div>';
+   var k=obj.key;
+   h+='<div class="gl-item"><div class="gl-check" onclick="toggleGlKey(this,\''+k+'\')"></div><span class="gl-name">'+obj.item+'</span></div>';
   });
-  h+='<div class="gl-item" style="gap:8px;border-bottom:none"><input class="ach-in" id="glcin-'+cat+'" placeholder="Add item..." style="font-size:13px;padding:5px 10px;height:32px" onkeydown="if(event.key==='Enter')addGlItem(''+cat+'')"><button onclick="addGlItem(''+cat+'')" style="font-size:12px;font-weight:700;padding:5px 10px;background:var(--as);color:var(--a);border-radius:7px;flex-shrink:0;white-space:nowrap">+ Add</button></div>';
+  h+='<div class="gl-item" style="gap:8px;border-bottom:none">'
+   +'<input class="ach-in" id="glcin-'+cat+'" placeholder="Add item..." style="font-size:13px;padding:5px 10px;height:32px">'
+   +'<button onclick="addGlItem(\''+cat+'\')" style="font-size:12px;font-weight:700;padding:5px 10px;background:var(--as);color:var(--a);border-radius:7px;flex-shrink:0;white-space:nowrap">+ Add</button></div>';
   if(checked.length){
    h+='<div style="margin-top:2px;padding-top:2px;border-top:1px dashed var(--b)">';
    checked.forEach(function(obj){
-    h+='<div class="gl-item"><div class="gl-check on" onclick="toggleGlKey(''+obj.key+'')">'+chkSvg+'</div><span class="gl-name done">'+obj.item+'</span></div>';
+    var k=obj.key;
+    h+='<div class="gl-item"><div class="gl-check on" onclick="toggleGlKey(this,\''+k+'\')">'+chkSvg+'</div><span class="gl-name done">'+obj.item+'</span></div>';
    });
    h+='</div>';
   }
@@ -718,7 +722,7 @@ function rGrocery(){
  });
  document.getElementById("glBody").innerHTML=h;
 }
-function toggleGlKey(key){
+function toggleGlKey(el,key){
  glc[key]=!glc[key];sv();rGrocery();
 }
 function addGlItem(cat){
