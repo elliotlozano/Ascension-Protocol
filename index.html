@@ -254,7 +254,13 @@ body.D .g-sh{background:#5a9a9a28;color:#7ababa}
 .ach-log-btn:active{transform:scale(.95)}
 
 /* ── Protocol chat bar ── */
-.chat-bar{flex-shrink:0;background:var(--dk);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-top:1px solid var(--b);padding:10px 16px 14px}
+.chat-thread{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;padding-right:2px}
+.chat-thread::-webkit-scrollbar{width:3px}
+.chat-thread::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+.chat-bubble{padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.5;max-width:88%}
+.chat-bubble.u{align-self:flex-end;background:var(--a);color:#1c1c1e;font-weight:500;border-radius:14px 14px 4px 14px}
+.chat-bubble.a{align-self:flex-start;background:var(--s2);color:var(--t2);border-radius:14px 14px 14px 4px;border:1px solid var(--b)}
+.chat-bubble.thinking{color:var(--mu);font-style:italic;background:transparent;border:none;padding-left:4px}
 .chat-title{font-size:14px;font-weight:600;color:var(--t);margin-bottom:8px}
 .chat-row{display:flex;gap:8px;align-items:flex-end}
 .chat-inp{flex:1;background:var(--s2);border:1.5px solid var(--b2);border-radius:var(--ri);padding:10px 13px;color:var(--t);font-size:14px;resize:none;min-height:42px;max-height:100px;outline:none;line-height:1.4;transition:border-color var(--tr)}
@@ -477,7 +483,8 @@ body.D .g-sh{background:#5a9a9a28;color:#7ababa}
     </div>
     <!-- Chat bar -->
     <div class="chat-bar">
-      <div class="chat-title">How can I help?</div>
+      <div class="chat-title">Protocol Assistant</div>
+      <div class="chat-thread" id="chatThread"></div>
       <div class="chat-row">
         <textarea class="chat-inp" id="chatInp" placeholder="Ask about your protocol, request changes..." rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
@@ -487,7 +494,6 @@ body.D .g-sh{background:#5a9a9a28;color:#7ababa}
           </svg>
         </button>
       </div>
-      <div class="chat-reply" id="chatReply"></div>
       <div class="chat-hint">Changes apply live · Progress is never erased</div>
     </div>
   </div>
@@ -516,6 +522,10 @@ body.D .g-sh{background:#5a9a9a28;color:#7ababa}
         <div class="set-row">
           <span class="set-lbl">Saturday Split</span>
           <span class="set-val" id="satSplit"></span>
+        </div>
+        <div class="set-row">
+          <span class="set-lbl">Chat Memory</span>
+          <button onclick="clearChatMemory()" style="font-size:13px;color:var(--mu);font-weight:600;padding:6px 12px;background:var(--s2);border-radius:8px;border:1px solid var(--b)">Clear</button>
         </div>
         <div class="set-row" style="border-bottom:none">
           <span class="set-lbl">Account</span>
@@ -596,7 +606,7 @@ var dark = localStorage.getItem('ac_th') !== 'L';
 var mission = localStorage.getItem('ac_mission') || DEFAULT_MISSION;
 var cM = 1, cW = 1, cD = 'Monday';
 var bioEditing = false;
-var chatHist = [];
+var chatHist = JSON.parse(localStorage.getItem('ac_chat') || '[]');
 
 // ── Save ──────────────────────────────────────────────────────
 function save() {
@@ -608,6 +618,7 @@ function save() {
   localStorage.setItem('ac_glc',  JSON.stringify(glc));
   localStorage.setItem('ac_th',   dark ? 'D' : 'L');
   localStorage.setItem('ac_mission', mission);
+  localStorage.setItem('ac_chat', JSON.stringify(chatHist));
   sbWrite();
 }
 
@@ -658,7 +669,7 @@ function sbWrite() {
     fetch(SB_URL + '/rest/v1/user_data?on_conflict=user_id', {
       method: 'POST',
       headers: Object.assign(authHeaders(), {'Prefer':'resolution=merge-duplicates'}),
-      body: JSON.stringify({user_id:authUserId, chk:chk, ovr:ovr, bio:bio, prs:prs, updated_at:new Date().toISOString()})
+      body: JSON.stringify({user_id:authUserId, chk:chk, ovr:ovr, bio:bio, prs:prs, chat:chatHist, updated_at:new Date().toISOString()})
     }).then(function(r) {
       setSyncUI(r.ok ? 'ok' : 'err');
     }).catch(function() { setSyncUI('err'); });
@@ -677,6 +688,7 @@ function sbLoad(cb) {
       if (d.ovr) ovr = d.ovr;
       if (d.bio) bio = d.bio;
       if (d.prs) prs = d.prs;
+      if (d.chat) { chatHist = d.chat; localStorage.setItem('ac_chat', JSON.stringify(chatHist)); }
     }
     setSyncUI('ok');
     cb();
@@ -792,10 +804,8 @@ function buildSchedule(day, wt, month, week) {
   t.push({time: isWE ? '7:00 AM' : '6:30 AM', task:'Wake — drink 16oz water', tag:'nutrition'});
   t.push({time: isWE ? '7:10 AM' : '6:40 AM', task:'Shower', tag:'shower'});
   t.push({time: isWE ? '7:15 AM' : '6:45 AM', task:'Skincare AM: Cleanser → Vitamin C → SPF', tag:'skincare'});
-  t.push({time: isWE ? '7:25 AM' : '6:55 AM', task:'Minoxidil — apply to dry scalp', tag:'hair'});
   if (!isWE) t.push({time:'7:00 AM', task:'Breakfast: ' + getBreakfast(week, day), tag:'nutrition'});
   t.push({time: isWE ? '7:30 AM' : '7:05 AM', task:'Supplements: D3/K2 · Omega-3 · Ashwagandha 600mg', tag:'supplement'});
-  t.push({time: isWE ? '7:40 AM' : '7:15 AM', task:'Finasteride — same time daily', tag:'hair'});
 
   if (!isWE) {
     t.push({time:'8:00 AM', task:'Work begins', tag:'admin'});
@@ -820,8 +830,7 @@ function buildSchedule(day, wt, month, week) {
   }
   if (day === 'Wednesday') {
     t.push({time:'5:30 PM', task:'Run — ' + meta.rd, tag:'cardio'});
-    t.push({time:'6:15 PM', task:'Post-run shower — wait 20 min for minoxidil', tag:'shower'});
-    t.push({time:'6:35 PM', task:'Apply minoxidil — scalp fully dry', tag:'hair'});
+    t.push({time:'6:15 PM', task:'Post-run shower', tag:'shower'});
   }
   if (day === 'Thursday') t.push({time:'5:00 PM', task:'Rest day — 20-min walk or rest', tag:'cardio'});
   if (day === 'Saturday') {
@@ -1379,14 +1388,25 @@ function logAchievement(k) {
 }
 
 // ── Protocol chat ─────────────────────────────────────────────
-var SYS = 'Protocol assistant for Ascension app. 30yo male, returning to fitness. V-taper, 5K races, skincare, hair.\n'
+var SYS = 'Protocol assistant for Ascension app. 30yo male, returning to fitness. V-taper, 5K races, skincare.\n'
   + 'MEALS: 16 breakfasts (weekdays), 16 dinners (Mon-Thu), leftovers=lunch, Mon=cafeteria, Fri=date night, weekends=snack. Evening snack 9:30pm (casein).\n'
   + 'SCHED: Mon Push A, Tue Pull A, Wed run, Thu rest, Fri Legs+Core, Sat Push B/Pull B, Sun prep.\n'
   + 'SUPS: D3/K2, Omega-3, Ashwagandha, Creatine post-gym, Citrulline pre-gym, Mag PM.\n'
-  + 'HAIR: Finasteride AM daily, Minoxidil AM+post-run. SKIN: AM (cleanser,VitC,SPF) PM (cleanser,retinol,moisturizer).\n'
+  + 'SKIN: AM (cleanser,VitC,SPF) PM (cleanser,retinol,moisturizer).\n'
   + 'For changes output JSON: ```json{"overrides":{"din.5":"grilled salmon"}}```\n'
   + 'Override keys: bf.{w}.{Day}, din.{0-15}, monlunch, sn.{m}.{w}.{Day}, m.{m}.{run|ret|wt|rd|label|hl}, m.{m}.rn (array), wo.{Mon|Tue|Fri|SatA|SatB}.\n'
   + 'Be warm, concise, encouraging.';
+
+function addBubble(cls, text) {
+  var thread = document.getElementById('chatThread');
+  if (!thread) return;
+  var div = document.createElement('div');
+  div.className = 'chat-bubble ' + cls;
+  div.textContent = text;
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+  return div;
+}
 
 function sendMsg() {
   var inp = document.getElementById('chatInp');
@@ -1394,13 +1414,10 @@ function sendMsg() {
   if (!tx) return;
   inp.value = ''; inp.style.height = 'auto';
   chatHist.push({role:'user', content:tx});
+  addBubble('u', tx);
   var btn = document.getElementById('chatSend');
   btn.disabled = true;
-  var replyEl = document.getElementById('chatReply');
-  replyEl.style.display = 'block';
-  replyEl.style.color = 'var(--mu)';
-  replyEl.style.fontStyle = 'italic';
-  replyEl.textContent = 'Thinking…';
+  var thinking = addBubble('thinking', 'Thinking…');
 
   fetch('/.netlify/functions/chat', {
     method: 'POST',
@@ -1408,7 +1425,8 @@ function sendMsg() {
     body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1000, system:SYS, messages:chatHist})
   }).then(function(r) { return r.json(); })
   .then(function(data) {
-    if (data.error) { replyEl.textContent = 'Error: ' + data.error.message; btn.disabled = false; return; }
+    if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
+    if (data.error) { addBubble('a', 'Error: ' + data.error.message); btn.disabled = false; return; }
     var full = (data.content || []).map(function(b) { return b.text || ''; }).join('');
     var jm = full.match(/```json\s*([\s\S]*?)```/);
     if (jm) {
@@ -1421,14 +1439,14 @@ function sendMsg() {
       } catch(e) {}
     }
     var clean = full.replace(/```json[\s\S]*?```/g, '').trim();
-    replyEl.textContent = clean;
-    replyEl.style.color = 'var(--t2)';
-    replyEl.style.fontStyle = 'normal';
+    addBubble('a', clean);
     chatHist.push({role:'assistant', content:full});
+    if (chatHist.length > 25) chatHist = chatHist.slice(chatHist.length - 25);
+    save();
     renderPlanner();
   }).catch(function() {
-    replyEl.textContent = "Couldn't connect — check your internet.";
-    replyEl.style.color = 'var(--mu)';
+    if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
+    addBubble('a', "Couldn't connect — check your internet.");
   }).finally(function() { btn.disabled = false; });
 }
 
@@ -1476,7 +1494,6 @@ document.getElementById('loginPass').addEventListener('keydown', function(ev) {
   if (ev.key === 'Enter') doLogin();
 });
 function launchApp() {
-  chatHist = [];
   showApp();
   syncToToday();
   sbLoad(function() {
@@ -1488,6 +1505,14 @@ function launchApp() {
 
 // ── Settings sign out ─────────────────────────────────────────
 function signOut() { sbSignOut(); }
+function clearChatMemory() {
+  chatHist = [];
+  localStorage.removeItem('ac_chat');
+  save();
+  var btn = event.target;
+  btn.textContent = 'Cleared ✓';
+  setTimeout(function() { btn.textContent = 'Clear'; }, 2000);
+}
 
 // ── Init ──────────────────────────────────────────────────────
 document.body.className = dark ? 'D' : 'L';
