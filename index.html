@@ -1402,13 +1402,9 @@ function sendMsg() {
   replyEl.style.fontStyle = 'italic';
   replyEl.textContent = 'Thinking…';
 
-  fetch('https://api.anthropic.com/v1/messages', {
+  fetch('/.netlify/functions/chat', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true',
-      'x-api-key': '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'
-    },
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1000, system:SYS, messages:chatHist})
   }).then(function(r) { return r.json(); })
   .then(function(data) {
@@ -1480,6 +1476,7 @@ document.getElementById('loginPass').addEventListener('keydown', function(ev) {
   if (ev.key === 'Enter') doLogin();
 });
 function launchApp() {
+  chatHist = [];
   showApp();
   syncToToday();
   sbLoad(function() {
