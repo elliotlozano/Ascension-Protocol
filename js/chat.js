@@ -38,7 +38,7 @@ async function sendMsg() {
   addBubble('u', tx);
   const thinking = addBubble('thinking', 'Thinking…');
   try {
-    const r = await fetch('/.netlify/functions/chat', {
+    const r = await fetch('https://theascensionprotocol.netlify.app/.netlify/functions/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, system:CHAT_SYSTEM, messages:hist })
     });
