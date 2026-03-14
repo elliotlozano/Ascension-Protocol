@@ -4,282 +4,221 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ascension">
 <meta name="theme-color" content="#1c1c1e">
 <title>Ascension Protocol</title>
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-512.svg">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Nunito:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="D">
 
-<!-- ══ LOGIN ══ -->
-<div id="loginScreen">
-  <div class="login-logo">
-    <svg class="login-chevron" width="60" height="52" viewBox="0 0 60 52" xmlns="http://www.w3.org/2000/svg">
-      <path d="M30 0 L54 36 L30 27 L6 36 Z" fill="#d4a853"/>
+<!-- ── Login ─────────────────────────────────────────────────── -->
+<div id="loginScreen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px">
+  <div style="margin-bottom:40px;text-align:center">
+    <svg width="80" height="96" viewBox="0 0 80 96" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px">
+      <path d="M40 4 L60 32 L40 24 L20 32 Z" fill="#d4a853"/>
+      <text x="40" y="60" font-family="Georgia,serif" font-size="13" font-weight="600" fill="#d4a853" text-anchor="middle" letter-spacing="1">ASCENSION</text>
+      <line x1="12" y1="68" x2="68" y2="68" stroke="#d4a85544" stroke-width="0.8"/>
+      <text x="40" y="82" font-family="Georgia,serif" font-size="7" font-weight="400" fill="#6d6d72" text-anchor="middle" letter-spacing="3">PROTOCOL</text>
     </svg>
-    <div class="login-title-top">Ascension</div>
-    <div class="login-title-bot">Protocol</div>
   </div>
-  <div class="login-form">
-    <input id="loginPass" class="login-inp" type="password" placeholder="Password" autocomplete="current-password">
-    <button id="loginBtn" class="login-btn" onclick="doLogin()">Enter</button>
-    <div id="loginErr" class="login-err"></div>
+  <div style="width:100%;max-width:320px">
+    <input id="loginPass" type="password" placeholder="Password"
+      style="width:100%;background:var(--s);border:1.5px solid var(--b2);border-radius:14px;padding:16px 20px;color:var(--t);font-size:17px;outline:none;text-align:center;letter-spacing:.12em;margin-bottom:12px;transition:border-color .2s;font-family:var(--fb)"
+      onfocus="this.style.borderColor='var(--a)'" onblur="this.style.borderColor='var(--b2)'">
+    <button id="loginBtn" onclick="AppModule.doLogin()" style="width:100%;padding:16px;background:var(--a);color:#1c1c1e;border-radius:14px;font-size:16px;font-weight:700;letter-spacing:.04em">Enter</button>
+    <div id="loginErr" style="text-align:center;margin-top:12px;font-size:13px;color:#c0504a;font-weight:500;min-height:18px"></div>
   </div>
 </div>
 
-<!-- ══ APP ══ -->
+<!-- ── App ───────────────────────────────────────────────────── -->
 <div id="app" style="display:none">
 
-  <!-- ── PROTOCOL TAB ── -->
-  <div class="pane on" id="pP">
-    <div class="hdr">
-      <div class="hdr-in">
-        <div><div class="ey">Ascension</div><div class="ttl">Protocol</div></div>
-        <span id="momentumScore" style="font-size:12px;font-weight:600;color:var(--mu)"></span>
-      </div>
-    </div>
-    <div class="strip">
-      <span class="strip-lbl">Phase</span>
-      <div id="phaseStrip" style="display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none"></div>
-    </div>
-    <div class="strip" style="padding-top:4px">
-      <span class="strip-lbl">Week</span>
-      <div id="weekStrip" style="display:flex;gap:6px"></div>
-      <div style="flex:1"></div>
-      <button class="today-btn" onclick="plannerGoToToday()">Today</button>
-    </div>
-    <div class="day-tabs" id="dayTabs"></div>
-    <div class="scroll">
-      <div class="banner" id="banner"></div>
-      <div class="coll-card" id="dinnerCard" style="margin-bottom:14px"></div>
-      <div class="day-hdr">
-        <div><div class="day-name" id="dayName"></div><div class="day-sub" id="daySub"></div></div>
-        <div><div class="day-pct" id="dayPct"></div><div class="day-cnt" id="dayCnt"></div></div>
-      </div>
-      <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
-      <button class="reset-btn" id="resetBtn" onclick="plannerResetDay()" style="display:none">Reset day</button>
-      <div class="task-list" id="taskList"></div>
+<!-- Protocol Tab -->
+<div class="pane on" id="pP">
+  <div class="hdr">
+    <div class="hdr-in">
+      <div><div class="ey">Ascension</div><div class="ttl">Protocol</div></div>
+      <span id="momentumScore" style="font-size:12px;font-weight:600;color:var(--mu)"></span>
     </div>
   </div>
-
-  <!-- ── ROADMAP TAB ── -->
-  <div class="pane" id="pR">
-    <div class="hdr"><div class="hdr-in"><div><div class="ey">Ascension</div><div class="ttl">Roadmap</div></div></div></div>
-    <div class="scroll">
-      <!-- Mission -->
-      <div class="phase-card" id="missionCard">
-        <div class="phase-hdr" onclick="toggleMissionExpand()">
-          <div class="phase-num" style="background:var(--as);color:var(--a);font-size:13px">✦</div>
-          <div style="flex:1;min-width:0">
-            <div class="phase-name">Mission</div>
-            <div id="missionPreview" class="mission-preview"></div>
-          </div>
-          <span class="phase-chev" id="missionChev">›</span>
-        </div>
-        <div class="phase-body" id="missionBody">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <button class="icon-btn" id="missionEditBtn" onclick="toggleMissionEdit(event)">✎</button>
-          </div>
-          <div id="missionFull" class="mission-full"></div>
-          <textarea class="mission-ta" id="missionTa" rows="8" style="display:none"></textarea>
-          <div id="missionActions" style="display:none;justify-content:flex-end;gap:8px;margin-top:10px">
-            <button onclick="cancelMission()" style="font-size:13px;color:var(--mu);font-weight:600;padding:8px 12px">Cancel</button>
-            <button onclick="saveMission()" style="font-size:14px;font-weight:700;padding:8px 18px;background:var(--a);color:#1c1c1e;border-radius:9px">Save</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Goals -->
-      <div class="sec-hdr">
-        <span class="sec-title">Goals</span>
-        <button class="add-btn" onclick="openGoalForm()">+</button>
-      </div>
-      <div class="goal-form" id="goalForm">
-        <div class="gf-row"><div class="gf-label">Event Name</div><input class="gf-inp" id="gfName" placeholder="e.g. Downtown 5K" autocomplete="off"></div>
-        <div class="gf-row"><div class="gf-label">Race Date</div><input class="gf-inp" id="gfDate" type="date" oninput="calcWeeksDisplay()"></div>
-        <div class="gf-row"><div class="gf-label">Weeks Out</div><div class="gf-weeks-display" id="gfWeeksDisplay">—</div></div>
-        <div class="gf-row"><div class="gf-label">Distance / Type</div><input class="gf-inp" id="gfDist" placeholder="e.g. 5K" autocomplete="off"></div>
-        <div class="gf-row">
-          <div class="gf-label">Target Time</div>
-          <div class="time-picker">
-            <select class="time-sel" id="gfHour">
-              <option value="0">0 hr</option><option value="1">1 hr</option><option value="2">2 hr</option><option value="3">3 hr</option>
-            </select>
-            <span class="time-colon">:</span>
-            <select class="time-sel" id="gfMin">
-              <option value="0">00 min</option><option value="5">05 min</option><option value="10">10 min</option>
-              <option value="15">15 min</option><option value="20">20 min</option><option value="25">25 min</option>
-              <option value="30">30 min</option><option value="35">35 min</option><option value="40">40 min</option>
-              <option value="45">45 min</option><option value="50">50 min</option><option value="55">55 min</option>
-            </select>
-          </div>
-        </div>
-        <div class="gf-row"><div class="gf-label">Notes (optional)</div><input class="gf-inp" id="gfNotes" placeholder="Current fitness, specific concerns…" autocomplete="off"></div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
-          <button onclick="closeGoalForm()" style="font-size:13px;color:var(--mu);font-weight:600;padding:10px 14px">Cancel</button>
-          <button onclick="saveGoal()" style="font-size:14px;font-weight:700;padding:10px 20px;background:var(--a);color:#1c1c1e;border-radius:10px">Save Goal</button>
-        </div>
-      </div>
-      <div id="goalsList"></div>
-
-      <!-- 3-Year Plan -->
-      <div class="sec-hdr" style="margin-top:4px"><span class="sec-title">3-Year Plan</span></div>
-      <div class="phase-card">
-        <div class="phase-hdr" onclick="togglePhase('1')">
-          <div class="phase-num" style="background:var(--as);color:var(--a)">I</div>
-          <div><div class="phase-name">The Re-Awakening</div><div class="phase-sub">Months 1–6 · 150→158 lbs</div></div>
-          <span class="phase-chev" id="pc1">›</span>
-        </div>
-        <div class="phase-body" id="pd1">
-          <p><strong>Goal:</strong> Rebuild your athletic base and establish consistency.</p>
-          <p><strong>Training:</strong> 3 gym days (Push/Pull/Legs), 1 run day (Zone 2, 20→30 min). Form and mind-muscle connection before adding weight.</p>
-          <p><strong>Nutrition:</strong> 2,400–2,600 cal. 150g protein daily. Lean bulk.</p>
-          <p><strong>Skin:</strong> Begin retinol slowly — 2x/week Month 1, every other night Month 2, nightly Month 3. SPF every morning.</p>
-          <p><strong>Milestone:</strong> By Month 6 people notice you work out in a t-shirt.</p>
-        </div>
-      </div>
-      <div class="phase-card">
-        <div class="phase-hdr" onclick="togglePhase('2')">
-          <div class="phase-num" style="background:#6b8cae22;color:#6b8cae">II</div>
-          <div><div class="phase-name">The Foundation</div><div class="phase-sub">Months 7–18 · 158→165 lbs</div></div>
-          <span class="phase-chev" id="pc2">›</span>
-        </div>
-        <div class="phase-body" id="pd2">
-          <p><strong>Goal:</strong> Build serious strength while running your first 5K races.</p>
-          <p><strong>Training:</strong> Progressive overload is the focus. Track every lift. Beat last week.</p>
-          <p><strong>5K:</strong> Race-ready by Month 12. Target sub-25 min. Build toward sub-22 by Month 18.</p>
-          <p><strong>Milestone:</strong> Veins in forearms, visible abs in normal lighting.</p>
-        </div>
-      </div>
-      <div class="phase-card">
-        <div class="phase-hdr" onclick="togglePhase('3')">
-          <div class="phase-num" style="background:#7a9e8722;color:#7a9e87">III</div>
-          <div><div class="phase-name">The Sculpture</div><div class="phase-sub">Year 2 · 165 lbs, ~12% BF</div></div>
-          <span class="phase-chev" id="pc3">›</span>
-        </div>
-        <div class="phase-body" id="pd3">
-          <p><strong>Goal:</strong> Perfecting the V-taper. Wide shoulders, visible lats, small waist.</p>
-          <p><strong>Training:</strong> Lateral deltoids and upper chest as primary movers. Cable lateral raises, incline flyes, face pulls.</p>
-          <p><strong>Recomp:</strong> Calories at maintenance. Lose fat while keeping muscle.</p>
-          <p><strong>Milestone:</strong> Shirtless confidence year-round. Suits fit like they were tailored.</p>
-        </div>
-      </div>
-      <div class="phase-card">
-        <div class="phase-hdr" onclick="togglePhase('4')">
-          <div class="phase-num" style="background:#9e7a9022;color:#9e7a90">IV</div>
-          <div><div class="phase-name">The Peak & Beyond</div><div class="phase-sub">Year 3+ · Permanent optimization</div></div>
-          <span class="phase-chev" id="pc4">›</span>
-        </div>
-        <div class="phase-body" id="pd4">
-          <p><strong>Goal:</strong> Biological optimization and longevity. Muscle maturity younger guys can't buy.</p>
-          <p><strong>Training:</strong> High-rep polish work. Protect joints. Mobility as a primary discipline.</p>
-          <p><strong>Advanced:</strong> Peptides after discussion with sports medicine physician. Not before Year 3.</p>
-        </div>
-      </div>
-    </div>
+  <div class="strip">
+    <span class="sl">Phase</span>
+    <div id="phaseStrip" style="display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none"></div>
   </div>
-
-  <!-- ── METRICS TAB ── -->
-  <div class="pane" id="pM">
-    <div class="hdr"><div class="hdr-in"><div><div class="ey">Ascension</div><div class="ttl">Metrics</div></div></div></div>
-    <div class="scroll">
-      <div class="card" id="macroCard"></div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="ct" style="margin-bottom:0">Biometrics</div>
-          <button class="icon-btn" id="bioBtn" onclick="toggleBioEdit()">✎</button>
-        </div>
-        <div class="bio-grid" id="bioGrid"></div>
-        <div class="bio-inputs" id="bioInputs"></div>
-      </div>
-      <div class="card"><div class="ct">Lift PRs</div><div id="liftPRs"></div></div>
-      <div class="card"><div class="ct">Run PRs</div><div id="runPRs"></div></div>
-      <div class="card">
-        <div class="ct">Weight History</div>
-        <div class="wg-wrap"><canvas id="wtCanvas"></canvas></div>
-        <div id="wtEmpty" style="display:none;font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:20px 0">Log your weight above to see your trend.</div>
-      </div>
-    </div>
+  <div class="strip" style="padding-top:4px">
+    <span class="sl">Week</span>
+    <div id="weekStrip" style="display:flex;gap:6px"></div>
+    <div style="flex:1"></div>
+    <button onclick="PlannerModule.goToToday()" style="font-size:11px;color:var(--a);font-weight:600;padding:4px 10px;background:var(--as);border-radius:6px;flex-shrink:0">Today</button>
   </div>
-
-  <!-- ── ACCOUNT TAB ── -->
-  <div class="pane" id="pA">
-    <div class="acct-page on" id="pageMain">
-      <div class="hdr"><div class="hdr-in"><div><div class="ey">Ascension</div><div class="ttl">Account</div></div></div></div>
-      <div class="scroll" style="padding-bottom:0">
-        <div class="acct-folder"><div class="acct-row" onclick="openAcctPage('pageSettings')"><div class="acct-icon" style="background:#6b8cae22">⚙️</div><span class="acct-lbl">Settings</span><span class="acct-chev">›</span></div></div>
-        <div class="acct-folder"><div class="acct-row" onclick="openAcctPage('pageGrocery')"><div class="acct-icon" style="background:#7a9e8722">🛒</div><span class="acct-lbl">Weekly Grocery List</span><span class="acct-chev">›</span></div></div>
-        <div class="acct-folder"><div class="acct-row" onclick="openAcctPage('pageAchievements')"><div class="acct-icon" style="background:#d4a85322">🏅</div><span class="acct-lbl">Achievements</span><span class="acct-chev">›</span></div></div>
-        <div class="acct-folder"><div class="acct-row" onclick="openAcctPage('pageGuide')"><div class="acct-icon" style="background:#9e7a9022">📋</div><span class="acct-lbl">Protocol Guide</span><span class="acct-chev">›</span></div></div>
-      </div>
-      <div class="chat-bar">
-        <div class="chat-title">Protocol Assistant</div>
-        <div class="chat-thread" id="chatThread"></div>
-        <div class="chat-row">
-          <textarea class="chat-inp" id="chatInp" placeholder="Ask about your protocol, request changes…" rows="1"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
-          <button class="chat-send" id="chatSend" onclick="sendMsg()">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8H4M8 4l4 4-4 4"/></svg>
-          </button>
-        </div>
-        <div class="chat-hint">Changes apply live · Progress is never erased</div>
-      </div>
+  <div class="dts" id="dayTabs"></div>
+  <div class="scroll">
+    <div class="bn" id="banner"></div>
+    <div class="card" id="dinnerCard" style="margin-bottom:12px"></div>
+    <div class="dh">
+      <div><div class="dn" id="dayName"></div><div class="ds" id="daySub"></div></div>
+      <div><div class="dp" id="dayPct"></div><div class="dc" id="dayCnt"></div></div>
     </div>
-
-    <div class="acct-page" id="pageSettings">
-      <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Settings</div></div></div></div>
-      <div class="scroll">
-        <div class="set-card">
-          <div class="set-row"><span class="set-lbl">Dark Mode</span><div class="tog" id="darkTog" onclick="toggleTheme()"><div class="tog-dot"></div></div></div>
-          <div class="set-row"><span class="set-lbl">Sync</span><span class="set-val" id="syncStatus"></span></div>
-          <div class="set-row"><span class="set-lbl">Today</span><span class="set-val" id="currentDate"></span></div>
-          <div class="set-row"><span class="set-lbl">Protocol Week</span><span class="set-val" id="protoWeek"></span></div>
-          <div class="set-row"><span class="set-lbl">Chat Memory</span><button id="clearChatBtn" onclick="clearChatMemory()" style="font-size:13px;color:var(--mu);font-weight:600;padding:6px 12px;background:var(--s2);border-radius:8px;border:1px solid var(--b)">Clear</button></div>
-          <div class="set-row" style="border-bottom:none"><span class="set-lbl">Account</span><button onclick="signOut()" class="danger-btn" style="color:#c0504a;background:rgba(192,80,74,.1)">Sign Out</button></div>
-        </div>
-        <button class="back-btn" onclick="closeAcctPage()">‹ Back</button>
-      </div>
-    </div>
-
-    <div class="acct-page" id="pageGrocery">
-      <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Grocery List</div></div></div></div>
-      <div class="scroll"><div class="gl-week" id="glWeekLabel"></div><div id="glBody"></div><button class="back-btn" onclick="closeAcctPage()">‹ Back</button></div>
-    </div>
-
-    <div class="acct-page" id="pageAchievements">
-      <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Achievements</div></div></div></div>
-      <div class="scroll"><div id="achBody"></div><button class="back-btn" onclick="closeAcctPage()">‹ Back</button></div>
-    </div>
-
-    <div class="acct-page" id="pageGuide">
-      <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Protocol Guide</div></div></div></div>
-      <div class="scroll"><div id="guideBody"></div><button class="back-btn" onclick="closeAcctPage()">‹ Back</button></div>
-    </div>
+    <div class="pb"><div class="pf" id="progFill"></div></div>
+    <button class="cb" id="resetBtn" onclick="PlannerModule.resetDay()" style="display:none">Reset day</button>
+    <div class="tl" id="taskList"></div>
   </div>
-
-  <!-- ── DOCK ── -->
-  <nav id="dock">
-    <button class="db" id="db-R" onclick="selTab('R')"><div class="di">◈</div><span class="dl">Roadmap</span></button>
-    <button class="db on" id="db-P" onclick="selTab('P')"><div class="di">⊞</div><span class="dl">Protocol</span></button>
-    <button class="db" id="db-M" onclick="selTab('M')"><div class="di">◎</div><span class="dl">Metrics</span></button>
-    <button class="db" id="db-A" onclick="selTab('A')"><div class="di">◉</div><span class="dl">Account</span></button>
-  </nav>
 </div>
 
-<!-- ── Scripts (order matters) ── -->
-<script src="js/data.js"></script>
+<!-- Roadmap Tab -->
+<div class="pane" id="pR">
+  <div class="hdr"><div class="hdr-in"><div><div class="ey">Ascension</div><div class="ttl">Roadmap</div></div></div></div>
+  <div class="scroll">
+    <!-- Mission -->
+    <div class="rp" id="missionCard">
+      <div class="rph" onclick="RoadmapModule.toggleMissionExpand()">
+        <div class="rpb" style="background:var(--as);color:var(--a);font-size:13px">✦</div>
+        <div style="flex:1;min-width:0">
+          <div class="rpl">Mission</div>
+          <div id="missionPreview" class="mission-preview" style="margin-top:3px"></div>
+        </div>
+        <span class="rpc" id="missionChev">›</span>
+      </div>
+      <div class="rpd" id="missionBody">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="edit-btn" id="missionBtn" onclick="RoadmapModule.toggleMissionEdit(event)">✎</button>
+        </div>
+        <p id="missionFull" class="mission-full" style="margin-bottom:0"></p>
+        <textarea class="mission-ta" id="missionTa" rows="8"></textarea>
+        <div id="missionActions" style="display:none;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button onclick="RoadmapModule.cancelMission()" style="font-size:13px;color:var(--mu);font-weight:600;padding:6px 12px">Cancel</button>
+          <button onclick="RoadmapModule.saveMission()" style="font-size:13px;font-weight:700;padding:6px 16px;background:var(--a);color:#1c1c1e;border-radius:8px">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goals -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;margin-top:4px">
+      <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu)">Goals</div>
+      <button onclick="RoadmapModule.openGoalForm()" style="font-size:14px;color:var(--a);font-weight:700;padding:4px 10px;background:var(--as);border-radius:6px">+</button>
+    </div>
+    <div class="goal-form" id="goalForm">
+      <div class="gf-row"><div class="gf-label">Event Name</div><input class="gf-inp" id="gfName" placeholder="e.g. Downtown 5K" autocomplete="off"></div>
+      <div class="gf-row"><div class="gf-label">Race Date</div><input class="gf-inp" id="gfDate" type="date" oninput="RoadmapModule.calcWeeksOut()"></div>
+      <div class="gf-row"><div class="gf-label">Weeks Out</div><div class="gf-weeks-display" id="gfWeeksDisplay">—</div></div>
+      <div class="gf-row"><div class="gf-label">Distance / Type</div><input class="gf-inp" id="gfDist" placeholder="e.g. 5K" autocomplete="off"></div>
+      <div class="gf-row"><div class="gf-label">Target Time</div><input class="gf-inp" id="gfTarget" placeholder="e.g. 24:00" autocomplete="off"></div>
+      <div class="gf-row"><div class="gf-label">Notes (optional)</div><input class="gf-inp" id="gfNotes" placeholder="Anything specific to prep for" autocomplete="off"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button onclick="RoadmapModule.closeGoalForm()" style="font-size:13px;color:var(--mu);font-weight:600;padding:10px 14px">Cancel</button>
+        <button onclick="RoadmapModule.saveGoal()" style="font-size:14px;font-weight:700;padding:10px 20px;background:var(--a);color:#1c1c1e;border-radius:10px">Save Goal</button>
+      </div>
+    </div>
+    <div id="goalsList"></div>
+
+    <!-- 3-Year Plan -->
+    <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:8px;margin-top:4px">3-Year Plan</div>
+    <div class="rp"><div class="rph" onclick="RoadmapModule.togglePhase('1')"><div class="rpb" style="background:var(--as);color:var(--a)">I</div><div><div class="rpl">The Re-Awakening</div><div class="rps">Months 1–6 · 150→158 lbs</div></div><span class="rpc" id="pc1">›</span></div>
+    <div class="rpd" id="pd1"><p><strong>Goal:</strong> Rebuild your athletic base and establish consistency.</p><p><strong>Training:</strong> 3 gym days (Push/Pull/Legs), 1 run day (Zone 2, 20→30 min). Form before load.</p><p><strong>Nutrition:</strong> 2,400–2,600 cal. 150g protein daily. Lean bulk.</p><p><strong>Skin:</strong> Begin retinol slowly. SPF every morning.</p><p><strong>Milestone:</strong> By Month 6 people notice you work out in a t-shirt.</p></div></div>
+    <div class="rp"><div class="rph" onclick="RoadmapModule.togglePhase('2')"><div class="rpb" style="background:#6b8cae22;color:#6b8cae">II</div><div><div class="rpl">The Foundation</div><div class="rps">Months 7–18 · 158→165 lbs</div></div><span class="rpc" id="pc2">›</span></div>
+    <div class="rpd" id="pd2"><p><strong>Goal:</strong> Build serious strength while running your first 5K races.</p><p><strong>Training:</strong> Progressive overload is the focus. Track every lift. Beat last week.</p><p><strong>5K:</strong> Race-ready by Month 12. Target sub-25 min. Build toward sub-22 by Month 18.</p><p><strong>Milestone:</strong> Veins in forearms, visible abs in normal lighting.</p></div></div>
+    <div class="rp"><div class="rph" onclick="RoadmapModule.togglePhase('3')"><div class="rpb" style="background:#7a9e8722;color:#7a9e87">III</div><div><div class="rpl">The Sculpture</div><div class="rps">Year 2 · 165 lbs, ~12% body fat</div></div><span class="rpc" id="pc3">›</span></div>
+    <div class="rpd" id="pd3"><p><strong>Goal:</strong> Perfecting the V-taper. Wide shoulders, visible lats, small waist.</p><p><strong>Training:</strong> Lateral deltoids and upper chest as primary movers.</p><p><strong>Recomp:</strong> Calories at maintenance. Lose fat while keeping muscle.</p><p><strong>Milestone:</strong> Shirtless confidence year-round. Suits fit like tailored.</p></div></div>
+    <div class="rp"><div class="rph" onclick="RoadmapModule.togglePhase('4')"><div class="rpb" style="background:#9e7a9022;color:#9e7a90">IV</div><div><div class="rpl">The Peak & Beyond</div><div class="rps">Year 3+ · Permanent optimization</div></div><span class="rpc" id="pc4">›</span></div>
+    <div class="rpd" id="pd4"><p><strong>Goal:</strong> Biological optimization and longevity.</p><p><strong>Training:</strong> High-rep polish. Protect joints. Mobility as a primary discipline.</p></div></div>
+  </div>
+</div>
+
+<!-- Metrics Tab -->
+<div class="pane" id="pM">
+  <div class="hdr"><div class="hdr-in"><div><div class="ey">Ascension</div><div class="ttl">Metrics</div></div></div></div>
+  <div class="scroll">
+    <div class="macro-card" id="macroCard"></div>
+    <div class="bio-card">
+      <div class="bio-hdr"><div class="ct" style="margin-bottom:0">Biometrics</div><button class="edit-btn" id="bioBtn" onclick="MetricsModule.toggleBioEdit()">✎</button></div>
+      <div class="bio-grid" id="bioGrid"></div>
+      <div class="bio-inputs" id="bioInputs"></div>
+    </div>
+    <div class="card"><div class="ct">Lift PRs</div><div id="liftPRs"></div></div>
+    <div class="card"><div class="ct">Run PRs</div><div id="runPRs"></div></div>
+    <div class="card"><div class="ct">Weight History</div>
+      <div class="wg-wrap"><canvas id="wtCanvas"></canvas></div>
+      <div id="wtEmpty" style="display:none;font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:20px 0">Log your weight above to see your trend.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Account Tab -->
+<div class="pane" id="pA">
+  <div class="acct-page on" id="pageMain">
+    <div class="hdr"><div class="hdr-in"><div><div class="ey">Ascension</div><div class="ttl">Account</div></div></div></div>
+    <div class="scroll" style="padding-bottom:16px">
+      <div class="acct-folder"><div class="acct-row" onclick="AccountModule.openPage('pageSettings')"><div class="acct-icon" style="background:#6b8cae22">⚙️</div><span class="acct-lbl">Settings</span><span class="acct-chev">›</span></div></div>
+      <div class="acct-folder"><div class="acct-row" onclick="AccountModule.openPage('pageGrocery')"><div class="acct-icon" style="background:#7a9e8722">🛒</div><span class="acct-lbl">Weekly Grocery List</span><span class="acct-chev">›</span></div></div>
+      <div class="acct-folder"><div class="acct-row" onclick="AccountModule.openPage('pageAchievements')"><div class="acct-icon" style="background:#d4a85322">🏅</div><span class="acct-lbl">Achievements</span><span class="acct-chev">›</span></div></div>
+      <div class="acct-folder"><div class="acct-row" onclick="AccountModule.openPage('pageGuide')"><div class="acct-icon" style="background:#9e7a9022">📋</div><span class="acct-lbl">Protocol Guide</span><span class="acct-chev">›</span></div></div>
+    </div>
+    <div class="chat-bar">
+      <div class="chat-title">Protocol Assistant</div>
+      <div class="chat-thread" id="chatThread"></div>
+      <div class="chat-row">
+        <textarea class="chat-inp" id="chatInp" placeholder="Ask about your protocol, request changes..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();ChatModule.sendMsg()}"></textarea>
+        <button class="chat-send" id="chatSend" onclick="ChatModule.sendMsg()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 8H4M8 4l4 4-4 4"/></svg>
+        </button>
+      </div>
+      <div class="chat-hint">Changes apply live · Progress is never erased</div>
+    </div>
+  </div>
+
+  <div class="acct-page" id="pageSettings">
+    <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Settings</div></div></div></div>
+    <div class="scroll">
+      <div class="set-card">
+        <div class="set-row"><span class="set-lbl">Dark Mode</span><div class="tog" id="darkTog" onclick="AppModule.toggleTheme()"><div class="tog-dot"></div></div></div>
+        <div class="set-row"><span class="set-lbl">Sync Status</span><span class="set-val" id="syncStatus"></span></div>
+        <div class="set-row"><span class="set-lbl">Current Date</span><span class="set-val" id="currentDate"></span></div>
+        <div class="set-row"><span class="set-lbl">Protocol Week</span><span class="set-val" id="protoWeek"></span></div>
+        <div class="set-row"><span class="set-lbl">Chat Memory</span><button onclick="AccountModule.clearChatMemory()" style="font-size:13px;color:var(--mu);font-weight:600;padding:6px 12px;background:var(--s2);border-radius:8px;border:1px solid var(--b)">Clear</button></div>
+        <div class="set-row" style="border-bottom:none"><span class="set-lbl">Account</span><button onclick="AccountModule.signOut()" style="font-size:13px;color:#c0504a;font-weight:600;padding:6px 12px;background:rgba(192,80,74,.1);border-radius:8px">Sign Out</button></div>
+      </div>
+      <button class="back-btn" onclick="AccountModule.closePage()">‹ Back</button>
+    </div>
+  </div>
+
+  <div class="acct-page" id="pageGrocery">
+    <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Grocery List</div></div></div></div>
+    <div class="scroll"><div class="gl-week" id="glWeekLabel"></div><div id="glBody"></div><button class="back-btn" onclick="AccountModule.closePage()">‹ Back</button></div>
+  </div>
+
+  <div class="acct-page" id="pageAchievements">
+    <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Achievements</div></div></div></div>
+    <div class="scroll"><div id="achBody"></div><button class="back-btn" onclick="AccountModule.closePage()">‹ Back</button></div>
+  </div>
+
+  <div class="acct-page" id="pageGuide">
+    <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Protocol Guide</div></div></div></div>
+    <div class="scroll"><div id="guideBody"></div><button class="back-btn" onclick="AccountModule.closePage()">‹ Back</button></div>
+  </div>
+</div>
+
+<nav id="dock">
+  <button class="db" id="db-R" onclick="AppModule.selTab('R')"><div class="di">◈</div><span class="dl">Roadmap</span></button>
+  <button class="db on" id="db-P" onclick="AppModule.selTab('P')"><div class="di">⊞</div><span class="dl">Protocol</span></button>
+  <button class="db" id="db-M" onclick="AppModule.selTab('M')"><div class="di">◎</div><span class="dl">Metrics</span></button>
+  <button class="db" id="db-A" onclick="AppModule.selTab('A')"><div class="di">◉</div><span class="dl">Account</span></button>
+</nav>
+
+</div><!-- end app -->
+
+<!-- Scripts — load order matters -->
 <script src="js/state.js"></script>
-<script src="js/schedule.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/data.js"></script>
 <script src="js/planner.js"></script>
 <script src="js/roadmap.js"></script>
 <script src="js/metrics.js"></script>
 <script src="js/account.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/app.js"></script>
-
 </body>
 </html>
