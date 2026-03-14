@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ascension">
 <title>Ascension Protocol</title>
@@ -127,9 +127,10 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .goal-form.open{display:block}
 .gf-row{margin-bottom:12px}
 .gf-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:5px}
-.gf-inp{width:100%;background:var(--s2);border:1.5px solid var(--b2);border-radius:9px;padding:9px 12px;color:var(--t);font-size:14px;outline:none;transition:border-color var(--tr)}
+.gf-inp{width:100%;background:var(--s2);border:1.5px solid var(--b2);border-radius:9px;padding:11px 12px;color:var(--t);font-size:16px;outline:none;transition:border-color var(--tr);-webkit-appearance:none}
 .gf-inp:focus{border-color:var(--a)}
-.gf-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.gf-row-2{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.gf-weeks-display{font-size:15px;font-weight:600;color:var(--a);padding:11px 12px;background:var(--s2);border:1.5px solid var(--b2);border-radius:9px;min-height:44px}
 /* Metrics */
 .macro-card{background:var(--s);border-radius:var(--rc);border:1px solid var(--b);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
 .mrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -200,6 +201,11 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .gl-add-inp:focus{border-color:var(--a)}
 .gl-add-btn{font-size:12px;font-weight:700;padding:7px 12px;background:var(--as);color:var(--a);border-radius:8px;flex-shrink:0}
 .gl-done-sep{margin-top:4px;padding-top:4px;border-top:1px dashed var(--b)}
+.gl-del-btn{width:22px;height:22px;border-radius:50%;background:#c0504a22;color:#c0504a;font-size:16px;font-weight:300;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;transition:all var(--tr)}
+.gl-del-btn:active{transform:scale(.88)}
+.gl-edit-inp{flex:1;background:var(--s2);border:1.5px solid var(--a);border-radius:7px;padding:5px 8px;color:var(--t);font-size:14px;outline:none}
+.gl-sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.gl-edit-mode-btn{font-size:11px;font-weight:600;color:var(--mu);padding:3px 8px;background:var(--s2);border-radius:6px;border:1px solid var(--b)}
 /* Achievements */
 .ach-sec{margin-bottom:4px}
 .ach-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -338,19 +344,15 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
     </div>
     <!-- Goal form -->
     <div class="goal-form" id="goalForm">
-      <div class="gf-row"><div class="gf-label">Event Name</div><input class="gf-inp" id="gfName" placeholder="e.g. Downtown 5K"></div>
-      <div class="gf-row-2">
-        <div><div class="gf-label">Race Date</div><input class="gf-inp" id="gfDate" type="date"></div>
-        <div><div class="gf-label">Distance / Type</div><input class="gf-inp" id="gfDist" placeholder="e.g. 5K"></div>
-      </div>
-      <div class="gf-row-2">
-        <div><div class="gf-label">Target Time</div><input class="gf-inp" id="gfTarget" placeholder="e.g. 24:00"></div>
-        <div><div class="gf-label">Weeks Out</div><input class="gf-inp" id="gfWeeks" type="number" placeholder="e.g. 8"></div>
-      </div>
-      <div class="gf-row"><div class="gf-label">Notes (optional)</div><input class="gf-inp" id="gfNotes" placeholder="Anything specific to prep for"></div>
+      <div class="gf-row"><div class="gf-label">Event Name</div><input class="gf-inp" id="gfName" placeholder="e.g. Downtown 5K" autocomplete="off"></div>
+      <div class="gf-row"><div class="gf-label">Race Date</div><input class="gf-inp" id="gfDate" type="date" oninput="calcWeeksOut()"></div>
+      <div class="gf-row"><div class="gf-label">Weeks Out</div><div class="gf-weeks-display" id="gfWeeksDisplay">—</div></div>
+      <div class="gf-row"><div class="gf-label">Distance / Type</div><input class="gf-inp" id="gfDist" placeholder="e.g. 5K" autocomplete="off"></div>
+      <div class="gf-row"><div class="gf-label">Target Time</div><input class="gf-inp" id="gfTarget" placeholder="e.g. 24:00" autocomplete="off"></div>
+      <div class="gf-row"><div class="gf-label">Notes (optional)</div><input class="gf-inp" id="gfNotes" placeholder="Anything specific to prep for" autocomplete="off"></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
-        <button onclick="closeGoalForm()" style="font-size:13px;color:var(--mu);font-weight:600;padding:8px 12px">Cancel</button>
-        <button onclick="saveGoal()" style="font-size:13px;font-weight:700;padding:8px 16px;background:var(--a);color:#1c1c1e;border-radius:10px">Save Goal</button>
+        <button onclick="closeGoalForm()" style="font-size:13px;color:var(--mu);font-weight:600;padding:10px 14px">Cancel</button>
+        <button onclick="saveGoal()" style="font-size:14px;font-weight:700;padding:10px 20px;background:var(--a);color:#1c1c1e;border-radius:10px">Save Goal</button>
       </div>
     </div>
     <div id="goalsList"></div>
@@ -838,11 +840,28 @@ function saveMission(){
 }
 
 // ── Goals ─────────────────────────────────────────────────────
+function calcWeeksOut(){
+  var dateVal=document.getElementById('gfDate').value;
+  var disp=document.getElementById('gfWeeksDisplay');
+  if(!dateVal){disp.textContent='—';return;}
+  var race=new Date(dateVal+'T12:00:00');
+  var now=new Date();
+  var diff=Math.round((race-now)/(7*86400000));
+  if(diff<=0){disp.textContent='Past date';disp.style.color='#c0504a';}
+  else{disp.textContent=diff+' week'+(diff===1?'':'s')+' away';disp.style.color='var(--a)';}
+}
 function openGoalForm(){document.getElementById('goalForm').classList.add('open');document.getElementById('gfName').focus();}
-function closeGoalForm(){document.getElementById('goalForm').classList.remove('open');['gfName','gfDate','gfDist','gfTarget','gfWeeks','gfNotes'].forEach(function(id){document.getElementById(id).value='';});}
+function closeGoalForm(){
+  document.getElementById('goalForm').classList.remove('open');
+  ['gfName','gfDate','gfDist','gfTarget','gfNotes'].forEach(function(id){document.getElementById(id).value='';});
+  var disp=document.getElementById('gfWeeksDisplay');if(disp){disp.textContent='—';disp.style.color='var(--a)';}
+}
 function saveGoal(){
   var name=document.getElementById('gfName').value.trim();if(!name)return;
-  var g={id:Date.now(),name:name,date:document.getElementById('gfDate').value,dist:document.getElementById('gfDist').value.trim(),target:document.getElementById('gfTarget').value.trim(),weeks:document.getElementById('gfWeeks').value.trim(),notes:document.getElementById('gfNotes').value.trim(),plan:'',tips:''};
+  var dateVal=document.getElementById('gfDate').value;
+  var weeksOut=0;
+  if(dateVal){var race=new Date(dateVal+'T12:00:00');weeksOut=Math.max(0,Math.round((race-new Date())/(7*86400000)));}
+  var g={id:Date.now(),name:name,date:dateVal,dist:document.getElementById('gfDist').value.trim(),target:document.getElementById('gfTarget').value.trim(),weeks:weeksOut,notes:document.getElementById('gfNotes').value.trim(),plan:'',tips:''};
   goals.unshift(g);save();closeGoalForm();renderGoals();
 }
 function deleteGoal(id){goals=goals.filter(function(g){return g.id!==id;});save();renderGoals();}
@@ -857,45 +876,69 @@ function renderGoals(){
   var html='';
   goals.forEach(function(g){
     var dateStr=g.date?new Date(g.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+    var weeksStr=g.weeks>0?g.weeks+' weeks away':'';
     html+='<div class="goal-card">'
       +'<div class="goal-hdr" onclick="toggleGoalBody('+g.id+')">'
       +'<div class="goal-icon" style="background:var(--as)">🎯</div>'
-      +'<div style="flex:1;min-width:0"><div class="goal-title">'+g.name+'</div>'+(dateStr?'<div class="goal-date">'+dateStr+'</div>':'')+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="goal-title">'+escHtml(g.name)+'</div>'+(dateStr?'<div class="goal-date">'+dateStr+(weeksStr?' · '+weeksStr:'')+'</div>':'')+'</div>'
       +'<span class="rpc" id="gc-'+g.id+'">›</span></div>'
       +'<div class="goal-body" id="gb-'+g.id+'">'
-      +(g.dist?'<div class="goal-field"><div class="goal-label">Distance / Type</div><div class="goal-value">'+g.dist+'</div></div>':'')
-      +(g.target?'<div class="goal-field"><div class="goal-label">Target Time</div><div class="goal-value">'+g.target+'</div></div>':'')
-      +(g.weeks?'<div class="goal-field"><div class="goal-label">Weeks Out</div><div class="goal-value">'+g.weeks+' weeks</div></div>':'')
-      +(g.notes?'<div class="goal-field"><div class="goal-label">Notes</div><div class="goal-value">'+g.notes+'</div></div>':'')
-      +(g.plan?'<div class="goal-field"><div class="goal-label">Training Plan</div><div class="goal-plan">'+g.plan+'</div></div>':'')
-      +(g.tips?'<div class="goal-field"><div class="goal-label">Race Day Tips</div><div class="goal-plan">'+g.tips+'</div></div>':'')
+      +(g.dist?'<div class="goal-field"><div class="goal-label">Distance / Type</div><div class="goal-value">'+escHtml(g.dist)+'</div></div>':'')
+      +(g.target?'<div class="goal-field"><div class="goal-label">Target Time</div><div class="goal-value">'+escHtml(g.target)+'</div></div>':'')
+      +(g.notes?'<div class="goal-field"><div class="goal-label">Notes</div><div class="goal-value">'+escHtml(g.notes)+'</div></div>':'')
+      +(g.plan?'<div class="goal-field"><div class="goal-label">Training Plan</div><div class="goal-plan" id="gplan-'+g.id+'">'+escHtml(g.plan)+'</div></div>':'<div id="gplan-'+g.id+'" style="display:none"></div>')
+      +(g.tips?'<div class="goal-field"><div class="goal-label">Race Day Tips</div><div class="goal-plan" id="gtips-'+g.id+'">'+escHtml(g.tips)+'</div></div>':'<div id="gtips-'+g.id+'" style="display:none"></div>')
       +'<div style="display:flex;gap:8px;margin-top:12px">'
-      +'<button class="gen-btn" onclick="generateGoalPlan('+g.id+',this)">✦ Generate Plan</button>'
+      +'<button class="gen-btn" id="gbtn-'+g.id+'" onclick="generateGoalPlan('+g.id+')">✦ '+(g.plan?'Regenerate Plan':'Generate Plan')+'</button>'
       +'<button onclick="deleteGoal('+g.id+')" style="font-size:12px;color:var(--mu);padding:10px 12px;background:var(--s2);border-radius:10px;border:1px solid var(--b)">Delete</button>'
-      +'</div></div></div>';
+      +'</div>'
+      +'<div id="gerr-'+g.id+'" style="display:none;font-size:12px;color:#c0504a;margin-top:8px;font-weight:500"></div>'
+      +'</div></div>';
   });
   el.innerHTML=html;
 }
-function generateGoalPlan(id, btn){
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function generateGoalPlan(id){
   var g=goals.find(function(x){return x.id===id;});if(!g)return;
-  btn.textContent='Generating…';btn.disabled=true;
-  var prompt='Generate a focused training plan for this goal:\nEvent: '+g.name+'\nDistance/Type: '+(g.dist||'unknown')+'\nTarget time: '+(g.target||'finish')+'\nWeeks out: '+(g.weeks||'unknown')+'\nNotes: '+(g.notes||'none')+'\n\nProvide:\n1. TRAINING PLAN: Week-by-week overview (concise)\n2. MEAL ADJUSTMENTS: Any specific nutrition changes\n3. RACE DAY TIPS: 4-5 key reminders\n\nBe specific, practical, and encouraging. Format with clear section headers.';
-  fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,system:'You are a fitness and race prep coach. Be concise, specific, and practical.',messages:[{role:'user',content:prompt}]})})
-  .then(function(r){return r.json();})
+  var btn=document.getElementById('gbtn-'+id);
+  var errEl=document.getElementById('gerr-'+id);
+  var planEl=document.getElementById('gplan-'+id);
+  var tipsEl=document.getElementById('gtips-'+id);
+  if(btn){btn.textContent='Generating…';btn.disabled=true;}
+  if(errEl)errEl.style.display='none';
+  var prompt='Generate a focused training plan for this goal:\nEvent: '+g.name+'\nDistance/Type: '+(g.dist||'unknown')+'\nTarget time: '+(g.target||'finish')+'\nWeeks out: '+(g.weeks||'unknown')+'\nCurrent fitness: '+(g.notes||'none')+'\n\nProvide three clearly labeled sections:\n\nTRAINING PLAN:\nWeek-by-week breakdown. Be specific.\n\nMEAL ADJUSTMENTS:\nAny nutrition changes to support this goal.\n\nRACE DAY TIPS:\n4-5 specific, practical reminders.\n\nBe concise and encouraging.';
+  fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,system:'You are a fitness and race prep coach. Be specific and practical.',messages:[{role:'user',content:prompt}]})})
+  .then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  })
   .then(function(data){
-    var full=(data.content||[]).map(function(b){return b.text||'';}).join('');
-    // Parse sections
-    var planMatch=full.match(/TRAINING PLAN[:\s]*([\s\S]*?)(?=MEAL ADJUSTMENTS|RACE DAY|$)/i);
-    var mealMatch=full.match(/MEAL ADJUSTMENTS[:\s]*([\s\S]*?)(?=RACE DAY|$)/i);
-    var tipsMatch=full.match(/RACE DAY TIPS[:\s]*([\s\S]*?)$/i);
-    g.plan=(planMatch?planMatch[1].trim():full.trim());
-    if(mealMatch)g.plan+='\n\nMeal Adjustments:\n'+mealMatch[1].trim();
-    g.tips=tipsMatch?tipsMatch[1].trim():'';
-    save();btn.textContent='✦ Regenerate';btn.disabled=false;renderGoals();
-    // Re-open the goal body
-    var body=document.getElementById('gb-'+id);var chev=document.getElementById('gc-'+id);
-    if(body){body.classList.add('open');if(chev)chev.classList.add('open');}
-  }).catch(function(){btn.textContent='✦ Generate Plan';btn.disabled=false;});
+    if(data.error)throw new Error(data.error.message||'API error');
+    var full=(data.content||[]).map(function(b){return b.text||'';}).join('').trim();
+    if(!full)throw new Error('Empty response');
+    // Split into plan and tips
+    var tipsMatch=full.match(/RACE DAY TIPS[:\s]*([\s\S]*)$/i);
+    var tips=tipsMatch?tipsMatch[1].trim():'';
+    var planBody=full.replace(/RACE DAY TIPS[:\s]*[\s\S]*$/i,'').trim();
+    g.plan=planBody;
+    g.tips=tips;
+    save();
+    // Update DOM directly without full re-render
+    if(planEl){planEl.style.display='block';planEl.className='goal-plan';planEl.textContent=planBody;}
+    if(tipsEl&&tips){tipsEl.style.display='block';tipsEl.className='goal-plan';tipsEl.textContent=tips;}
+    // Add labels if not already there (first time generation)
+    if(planEl&&!document.getElementById('gplan-label-'+id)){
+      var lbl=document.createElement('div');lbl.className='goal-label';lbl.id='gplan-label-'+id;lbl.textContent='Training Plan';planEl.parentNode.insertBefore(lbl,planEl);
+    }
+    if(tips&&tipsEl&&!document.getElementById('gtips-label-'+id)){
+      var lbl2=document.createElement('div');lbl2.className='goal-label';lbl2.id='gtips-label-'+id;lbl2.textContent='Race Day Tips';tipsEl.parentNode.insertBefore(lbl2,tipsEl);
+    }
+    if(btn){btn.textContent='✦ Regenerate Plan';btn.disabled=false;}
+  })
+  .catch(function(e){
+    if(btn){btn.textContent='✦ Generate Plan';btn.disabled=false;}
+    if(errEl){errEl.textContent='Error: '+e.message+'. Check connection and try again.';errEl.style.display='block';}
+  });
 }
 
 // ── Metrics ──────────────────────────────────────────────────
@@ -976,6 +1019,7 @@ function signOut(){sbSignOut();}
 function clearChatMemory(){chatHist=[];localStorage.removeItem('ac_chat');save();var btn=event.target;btn.textContent='Cleared ✓';setTimeout(function(){btn.textContent='Clear';},2000);}
 
 // ── Grocery ──────────────────────────────────────────────────
+var glEditMode = {}; // tracks which sections are in edit mode
 function getNextWeekLabel(){var now=new Date(),dow=now.getDay(),daysToSat=(6-dow+7)%7||7,sat=new Date(now);sat.setDate(now.getDate()+daysToSat);var mon=new Date(sat);mon.setDate(sat.getDate()+1);var fmt=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});};return'Week of '+fmt(mon)+' – '+fmt(new Date(mon.getTime()+6*86400000));}
 function buildGroceryItems(){
   var nextW=(globalWeek()%52)+1;
@@ -983,7 +1027,12 @@ function buildGroceryItems(){
   var pm={salmon:['Salmon (2 lbs)'],beef:['Lean ground beef (1 lb)'],chicken:['Chicken thighs or breast (2 lbs)'],shrimp:['Shrimp (1 lb)'],pork:['Pork tenderloin (1 lb)'],bison:['Ground bison (1 lb)'],cod:['Cod fillets (1 lb)'],turkey:['Ground turkey (1 lb)'],tuna:['Tuna steak (1 lb)'],steak:['Sirloin steak (1 lb)']};
   ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var din=getDinner(nextW,d)||'';Object.keys(pm).forEach(function(p){if(din.toLowerCase().indexOf(p)!==-1){pm[p].forEach(function(item){if(!seen[item]){seen[item]=true;protein.push(item);}});}});});
   protein.push('Eggs (dozen)','Chicken breast (meal prep)');
-  return{protein:protein,produce:['Spinach / mixed greens (bag)','Broccoli','Sweet potato (3–4)','Brussels sprouts','Zucchini','Cherry tomatoes','Banana (bunch)','Berries (frozen, 1 bag)','Avocado (3–4)','Cucumber','Baby carrots'],grains:['Brown rice (bag)','Rolled oats (large container)','Sprouted grain / Ezekiel bread','Quinoa','Whole wheat pasta','Rice cakes'],dairy:['Greek yogurt (32oz tub)','Cottage cheese (32oz)','Almond milk (half gallon)','String cheese','Feta (small block)'],pantry:['Natural almond butter','Protein powder','Olive oil','Low-sodium soy sauce','Hot sauce','Honey','Almonds / mixed nuts','Casein protein']};
+  var raw={protein:protein,produce:['Spinach / mixed greens (bag)','Broccoli','Sweet potato (3–4)','Brussels sprouts','Zucchini','Cherry tomatoes','Banana (bunch)','Berries (frozen, 1 bag)','Avocado (3–4)','Cucumber','Baby carrots'],grains:['Brown rice (bag)','Rolled oats (large container)','Sprouted grain / Ezekiel bread','Quinoa','Whole wheat pasta','Rice cakes'],dairy:['Greek yogurt (32oz tub)','Cottage cheese (32oz)','Almond milk (half gallon)','String cheese','Feta (small block)'],pantry:['Natural almond butter','Protein powder','Olive oil','Low-sodium soy sauce','Hot sauce','Honey','Almonds / mixed nuts','Casein protein']};
+  // Apply edits and filter deleted
+  Object.keys(raw).forEach(function(cat){
+    raw[cat]=raw[cat].filter(function(item,i){return !glc['del.'+cat+'.'+i];}).map(function(item,i){return glc['edit.'+cat+'.'+i]||item;});
+  });
+  return raw;
 }
 function renderGrocery(){
   document.getElementById('glWeekLabel').textContent=getNextWeekLabel();
@@ -992,20 +1041,69 @@ function renderGrocery(){
   var chkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4L3.5 6.5L9 1"/></svg>';
   var html='';
   Object.keys(labels).forEach(function(cat){
-    html+='<div class="gl-sec"><div class="gl-sh">'+labels[cat]+'</div>';
-    var customs=glc['custom.'+cat]||[],allItems=items[cat].concat(customs);
+    var editing=!!glEditMode[cat];
+    html+='<div class="gl-sec">'
+      +'<div class="gl-sec-hdr"><div class="gl-sh">'+labels[cat]+'</div>'
+      +'<button class="gl-edit-mode-btn" onclick="toggleGroceryEdit(\''+cat+'\')">'+(editing?'Done':'Edit')+'</button></div>';
+    var customs=glc['custom.'+cat]||[];
+    // Build all items with their source type
+    var allItems=[];
+    items[cat].forEach(function(item,i){allItems.push({item:item,key:'gl.'+cat+'.'+i,type:'gen',idx:i});});
+    customs.forEach(function(item,i){allItems.push({item:item,key:'gl.'+cat+'.c'+i,type:'custom',idx:i});});
     var unchecked=[],checked=[];
-    allItems.forEach(function(item,i){var key='gl.'+cat+'.'+i;if(glc[key])checked.push({item:item,key:key});else unchecked.push({item:item,key:key});});
-    unchecked.forEach(function(obj){html+='<div class="gl-item"><div class="gl-chk" onclick="toggleGrocery(\''+obj.key+'\')"></div><span class="gl-name">'+obj.item+'</span></div>';});
+    allItems.forEach(function(obj){if(glc[obj.key])checked.push(obj);else unchecked.push(obj);});
+    // Render unchecked
+    unchecked.forEach(function(obj){
+      html+='<div class="gl-item" id="gli-'+obj.key.replace(/\./g,'-')+'">';
+      if(editing){
+        html+='<div class="gl-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">−</div>';
+        html+='<input class="gl-edit-inp" value="'+escHtml(obj.item)+'" onchange="editGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+',this.value)">';
+      } else {
+        html+='<div class="gl-chk" onclick="toggleGrocery(\''+obj.key+'\')"></div>';
+        html+='<span class="gl-name">'+escHtml(obj.item)+'</span>';
+      }
+      html+='</div>';
+    });
+    // Add item row (always shown)
     html+='<div class="gl-add-row"><input class="gl-add-inp" id="glInp-'+cat+'" placeholder="Add item..." type="text"><button class="gl-add-btn" onclick="addGroceryItem(\''+cat+'\')">+ Add</button></div>';
-    if(checked.length){html+='<div class="gl-done-sep">';checked.forEach(function(obj){html+='<div class="gl-item"><div class="gl-chk on" onclick="toggleGrocery(\''+obj.key+'\')">'+chkSvg+'</div><span class="gl-name done">'+obj.item+'</span></div>';});html+='</div>';}
+    // Checked items
+    if(checked.length){
+      html+='<div class="gl-done-sep">';
+      checked.forEach(function(obj){
+        html+='<div class="gl-item">';
+        if(editing){
+          html+='<div class="gl-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">−</div>';
+          html+='<span class="gl-name done">'+escHtml(obj.item)+'</span>';
+        } else {
+          html+='<div class="gl-chk on" onclick="toggleGrocery(\''+obj.key+'\')">'+chkSvg+'</div>';
+          html+='<span class="gl-name done">'+escHtml(obj.item)+'</span>';
+        }
+        html+='</div>';
+      });
+      html+='</div>';
+    }
     html+='</div>';
   });
   document.getElementById('glBody').innerHTML=html;
   Object.keys(labels).forEach(function(cat){var inp=document.getElementById('glInp-'+cat);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')addGroceryItem(cat);});});
 }
+function toggleGroceryEdit(cat){glEditMode[cat]=!glEditMode[cat];renderGrocery();}
 function toggleGrocery(key){glc[key]=!glc[key];save();renderGrocery();}
 function addGroceryItem(cat){var inp=document.getElementById('glInp-'+cat);if(!inp)return;var v=inp.value.trim();if(!v)return;if(!glc['custom.'+cat])glc['custom.'+cat]=[];glc['custom.'+cat].push(v);save();renderGrocery();}
+function deleteGroceryItem(cat,type,idx){
+  if(type==='custom'){
+    var customs=glc['custom.'+cat]||[];customs.splice(idx,1);glc['custom.'+cat]=customs;
+  } else {
+    // Mark generated item as deleted
+    glc['del.'+cat+'.'+idx]=true;
+  }
+  save();renderGrocery();
+}
+function editGroceryItem(cat,type,idx,val){
+  if(type==='custom'){var customs=glc['custom.'+cat]||[];customs[idx]=val;glc['custom.'+cat]=customs;}
+  else{glc['edit.'+cat+'.'+idx]=val;}
+  save();
+}
 
 // ── Achievements ─────────────────────────────────────────────
 var ACH_DISTS=[{k:'mile',l:'1 Mile',icon:'🏃'},{k:'fivek',l:'5K',icon:'🏅'},{k:'tenk',l:'10K',icon:'🏆'}];
