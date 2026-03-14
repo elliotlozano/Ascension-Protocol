@@ -1,5 +1,24 @@
+const ALLOWED_ORIGINS = [
+  'https://elliotlozano.github.io',
+  'https://theascensionprotocol.netlify.app'
+];
+
 exports.handler = async function(event) {
-  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
+  const origin = event.headers.origin || '';
+  const corsOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: corsHeaders, body: '' };
+  }
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers: corsHeaders, body: 'Method Not Allowed' };
+  }
+
   try {
     const body = JSON.parse(event.body);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -14,10 +33,14 @@ exports.handler = async function(event) {
     const data = await response.json();
     return {
       statusCode: response.status,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     };
-  } catch (e) {
-    return { statusCode: 500, body: JSON.stringify({ error: { message: e.message } }) };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: { message: err.message } })
+    };
   }
 };
