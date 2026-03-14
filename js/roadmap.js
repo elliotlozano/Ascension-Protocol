@@ -159,7 +159,7 @@ async function generateGoalPlan(id) {
   if (errEl) errEl.style.display = 'none';
   const prompt = `Generate a focused training plan for this goal:\nEvent: ${g.name}\nDistance/Type: ${g.dist||'unknown'}\nTarget time: ${g.target||'finish'}\nWeeks out: ${g.weeks||'unknown'}\nCurrent fitness: ${g.notes||'none'}\n\nProvide three clearly labeled sections:\n\nTRAINING PLAN:\nWeek-by-week breakdown.\n\nMEAL ADJUSTMENTS:\nNutrition changes to support this goal.\n\nRACE DAY TIPS:\n4-5 specific reminders.\n\nBe concise and encouraging.`;
   try {
-    const r = await fetch('/.netlify/functions/chat', { method:'POST', headers:{'Content-Type':'application/json'},
+    const r = await fetch('https://theascensionprotocol.netlify.app/.netlify/functions/chat', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1200,
         system:'You are a fitness and race prep coach. Be specific and practical.',
         messages:[{role:'user',content:prompt}]
@@ -206,7 +206,7 @@ async function sendGoalChat(id) {
 
   const systemPrompt = `You are a fitness and race prep coach refining a training plan.\nCurrent plan:\n${g.plan}\nRace day tips:\n${g.tips}\n\nWhen the user requests adjustments, update the FULL plan and tips and output the complete revised version. Label sections: TRAINING PLAN: and RACE DAY TIPS:`;
   try {
-    const r = await fetch('/.netlify/functions/chat', { method:'POST', headers:{'Content-Type':'application/json'},
+    const r = await fetch('https://theascensionprotocol.netlify.app/.netlify/functions/chat', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1400, system:systemPrompt, messages:hist })
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
