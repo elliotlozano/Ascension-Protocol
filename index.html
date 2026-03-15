@@ -49,6 +49,7 @@
   <div class="dts" id="dayTabs"></div>
   <div class="scroll">
     <div class="bn" id="banner"></div>
+    <div class="card" id="dinnerCard"></div>
     <div class="dh">
       <div>
         <div style="display:flex;align-items:baseline;gap:8px">
@@ -62,7 +63,6 @@
     <div class="pb"><div class="pf" id="progFill"></div></div>
     <button class="cb" id="resetBtn" onclick="resetDay()" style="display:none">Reset day</button>
     <div class="tl" id="taskList"></div>
-    <div class="card" id="dinnerCard"></div>
   </div>
 </div>
 
@@ -173,6 +173,7 @@
   <div class="acct-page" id="pageSettings">
     <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Settings</div></div></div></div>
     <div class="scroll">
+      <button class="back-btn" onclick="closePage()">‹ Back</button>
       <div class="set-card">
         <div class="set-row"><span class="set-lbl">Dark Mode</span><div class="tog" id="darkTog" onclick="toggleTheme()"><div class="tog-dot"></div></div></div>
         <div class="set-row"><span class="set-lbl">Sync Status</span><span class="set-val" id="syncStatus"></span></div>
@@ -181,23 +182,22 @@
         <div class="set-row"><span class="set-lbl">Chat Memory</span><button onclick="clearChatMemory()" style="font-size:13px;color:var(--mu);font-weight:600;padding:6px 12px;background:var(--s2);border-radius:8px;border:1px solid var(--b)">Clear</button></div>
         <div class="set-row" style="border-bottom:none"><span class="set-lbl">Account</span><button onclick="signOut()" style="font-size:13px;color:#c0504a;font-weight:600;padding:6px 12px;background:rgba(192,80,74,.1);border-radius:8px">Sign Out</button></div>
       </div>
-      <button class="back-btn" onclick="closePage()">‹ Back to Account</button>
     </div>
   </div>
 
   <div class="acct-page" id="pageGrocery">
     <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Grocery List</div></div></div></div>
-    <div class="scroll"><div class="gl-week" id="glWeekLabel"></div><div id="glBody"></div><button class="back-btn" onclick="closePage()">‹ Back to Account</button></div>
+    <div class="scroll"><button class="back-btn" onclick="closePage()">‹ Back</button><div class="gl-week" id="glWeekLabel"></div><div id="glBody"></div></div>
   </div>
 
   <div class="acct-page" id="pageAchievements">
     <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Achievements</div></div></div></div>
-    <div class="scroll"><div id="achBody"></div><button class="back-btn" onclick="closePage()">‹ Back to Account</button></div>
+    <div class="scroll"><button class="back-btn" onclick="closePage()">‹ Back</button><div id="achBody"></div></div>
   </div>
 
   <div class="acct-page" id="pageGuide">
     <div class="hdr"><div class="hdr-in"><div><div class="ey">Account</div><div class="ttl">Protocol Guide</div></div></div></div>
-    <div class="scroll"><div id="guideBody"></div><button class="back-btn" onclick="closePage()">‹ Back to Account</button></div>
+    <div class="scroll"><button class="back-btn" onclick="closePage()">‹ Back</button><div id="guideBody"></div></div>
   </div>
 </div>
 

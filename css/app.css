@@ -44,9 +44,17 @@ textarea,input{font-family:var(--fb)}
 .dd{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--sg)}
 /* Banner */
 .bn{background:var(--s);border-radius:var(--rc);border:1px solid var(--b);border-left:3px solid var(--a);padding:14px 16px;margin-bottom:14px;box-shadow:var(--sh)}
-.bnt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:8px}
-.bnb{font-size:13px;color:var(--t3);line-height:1.7}
+.bn-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.bnt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.bnb{font-size:13px;color:var(--t3);line-height:1.7;display:none;margin-top:8px}
+.bnb.open{display:block}
 .bnb strong{color:var(--t2);font-weight:600}
+.bn-chev{font-size:14px;color:var(--mu);transition:transform .25s;flex-shrink:0}
+.bn-chev.open{transform:rotate(90deg)}
+/* Collapsible dinner card */
+.din-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.din-body{display:none;margin-top:10px}
+.din-body.open{display:block}
 /* Day header */
 .dh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
 .dn{font-family:var(--fd);font-size:28px;font-weight:600;color:var(--t)}
@@ -170,7 +178,7 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .acct-chev{font-size:14px;color:var(--mu)}
 .acct-page{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
 .acct-page.on{display:flex}
-.back-btn{font-size:13px;color:var(--a);font-weight:600;padding:10px 20px 4px;display:block}
+.back-btn{font-size:13px;color:var(--a);font-weight:600;padding:0 0 14px;display:block}
 /* Settings */
 .set-card{background:var(--s);border-radius:var(--rc);border:1px solid var(--b);overflow:hidden;box-shadow:var(--sh)}
 .set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--b)}

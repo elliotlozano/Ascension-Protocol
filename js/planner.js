@@ -80,12 +80,16 @@ function renderPlanner() {
   });
   document.getElementById('dayTabs').innerHTML=dtHtml;
 
-  // Banner
+  // Banner (collapsible)
   var satInfo = ' · Sat: '+(wt==='A'?'Push B':'Pull B');
   var bn=document.getElementById('banner');
   bn.style.borderLeftColor=meta.hl;
-  bn.innerHTML='<div class="bnt" style="color:'+meta.hl+'">'+meta.label+' · '+phase.sub+'</div>'
-    +'<div class="bnb"><strong>Skin:</strong> '+meta.ret+'<br><strong>Run:</strong> '+meta.run+'<br><strong>Gym:</strong> '+meta.wt+satInfo+'</div>';
+  var bannerOpen=localStorage.getItem('ac_banner_open')==='true';
+  bn.innerHTML='<div class="bn-hdr" onclick="toggleBanner()">'
+    +'<div class="bnt" style="color:'+meta.hl+'">'+meta.label+' · '+phase.sub+'</div>'
+    +'<span class="bn-chev'+(bannerOpen?' open':'')+'">›</span></div>'
+    +'<div class="bnb'+(bannerOpen?' open':'')+'">'
+    +'<strong>Skin:</strong> '+meta.ret+'<br><strong>Run:</strong> '+meta.run+'<br><strong>Gym:</strong> '+meta.wt+satInfo+'</div>';
 
   // Day header — feature 1: day name + month/day beside it
   var actualDate = getActualDate(cProtoMonth, cW, cD);
@@ -117,13 +121,18 @@ function renderPlanner() {
   });
   document.getElementById('taskList').innerHTML=tlHtml;
 
-  // Dinner card
-  var dinHtml='<div class="ct">This Week\'s Dinners</div>';
+  // Dinner card (collapsible)
+  var dinnerOpen=localStorage.getItem('ac_dinner_open')==='true';
+  var dinHtml='<div class="din-hdr" onclick="toggleDinner()">'
+    +'<div class="ct" style="margin-bottom:0">This Week\'s Dinners</div>'
+    +'<span class="bn-chev'+(dinnerOpen?' open':'')+'">›</span></div>';
+  dinHtml+='<div class="din-body'+(dinnerOpen?' open':'')+'">';
   ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d,i){
     var idx=(gW-1)*4+i;
     dinHtml+='<div class="mr"><span class="ml">'+d.slice(0,3)+' #'+((idx%16)+1)+'</span><span class="mv">'+getDinner(gW,d)+'</span></div>';
   });
   dinHtml+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b);font-size:12px;color:var(--mu);line-height:1.6">Each dinner = next day\'s lunch · Fri = date night · Snacks alternate daily</div>';
+  dinHtml+='</div>';
   document.getElementById('dinnerCard').innerHTML=dinHtml;
 }
 
@@ -133,6 +142,24 @@ function selDay(d){cD=d;renderPlanner();}
 function toggleTask(i){var k=ckKey(cD,i);chk[k]=!chk[k];save();renderPlanner();}
 function resetDay(){var ts=buildSchedule(cD,cProtoMonth,globalWeek());ts.forEach(function(_,i){delete chk[ckKey(cD,i)];});save();renderPlanner();}
 
+function toggleBanner(){
+  var open=localStorage.getItem('ac_banner_open')==='true';
+  open=!open;
+  localStorage.setItem('ac_banner_open',String(open));
+  var body=document.querySelector('#banner .bnb');
+  var chev=document.querySelector('#banner .bn-chev');
+  if(body)body.classList.toggle('open',open);
+  if(chev)chev.classList.toggle('open',open);
+}
+function toggleDinner(){
+  var open=localStorage.getItem('ac_dinner_open')==='true';
+  open=!open;
+  localStorage.setItem('ac_dinner_open',String(open));
+  var body=document.querySelector('#dinnerCard .din-body');
+  var chev=document.querySelector('#dinnerCard .bn-chev');
+  if(body)body.classList.toggle('open',open);
+  if(chev)chev.classList.toggle('open',open);
+}
 function goToToday(){syncToToday();renderPlanner();}
 function syncToToday(){
   var now=new Date();
