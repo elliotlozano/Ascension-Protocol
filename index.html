@@ -132,17 +132,34 @@
 
 <!-- ══ METRICS ══ -->
 <div class="pane" id="pM">
-  <div class="hdr"><div class="hdr-in"><div><div class="ttl">Metrics</div></div></div></div>
-  <div class="scroll">
-    <div class="macro-card" id="macroCard"></div>
-    <div class="bio-card">
-      <div class="bio-hdr"><div class="ct" style="margin-bottom:0">Biometrics</div><button class="edit-btn" id="bioBtn" onclick="toggleBioEdit()">✎</button></div>
-      <div class="bio-grid" id="bioGrid"></div>
-      <div class="bio-inputs" id="bioInputs"></div>
+  <div class="mtr-page on" id="pageMetricsMain">
+    <div class="hdr"><div class="hdr-in"><div><div class="ttl">Metrics</div></div></div></div>
+    <div class="scroll">
+      <div class="macro-card" id="macroCard"></div>
+      <div class="bio-card">
+        <div class="bio-hdr"><div class="ct" style="margin-bottom:0">Biometrics</div><button class="edit-btn" id="bioBtn" onclick="toggleBioEdit()">✎</button></div>
+        <div class="bio-grid" id="bioGrid"></div>
+        <div class="bio-inputs" id="bioInputs"></div>
+      </div>
+      <div class="card"><div class="ct">Lift PRs</div><div id="liftPRs"></div></div>
+      <div class="card"><div class="ct">Run PRs</div><div id="runPRs"></div></div>
+      <div class="card"><div class="ct">Weight History</div><div class="wg-wrap"><canvas id="wtCanvas"></canvas></div><div id="wtEmpty" style="display:none;font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:20px 0">Log your weight above to see your trend.</div></div>
     </div>
-    <div class="card"><div class="ct">Lift PRs</div><div id="liftPRs"></div></div>
-    <div class="card"><div class="ct">Run PRs</div><div id="runPRs"></div></div>
-    <div class="card"><div class="ct">Weight History</div><div class="wg-wrap"><canvas id="wtCanvas"></canvas></div><div id="wtEmpty" style="display:none;font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:20px 0">Log your weight above to see your trend.</div></div>
+  </div>
+
+  <div class="mtr-page" id="pageMacros">
+    <div class="hdr"><div class="hdr-in"><div><div class="ttl">Macro Tracker</div></div></div></div>
+    <div class="scroll">
+      <button class="back-btn" onclick="closeMacroPage()">‹ Back</button>
+      <div class="mac-tabs">
+        <button class="mac-tab on" id="macTab-today"  onclick="selMacroTab('today')">Today</button>
+        <button class="mac-tab"    id="macTab-week"   onclick="selMacroTab('week')">Week</button>
+        <button class="mac-tab"    id="macTab-insights" onclick="selMacroTab('insights')">Insights</button>
+      </div>
+      <div id="macSec-today"></div>
+      <div id="macSec-week"     style="display:none"></div>
+      <div id="macSec-insights" style="display:none"></div>
+    </div>
   </div>
 </div>
 
@@ -216,6 +233,7 @@
 <script src="js/planner.js"></script>
 <script src="js/roadmap.js"></script>
 <script src="js/metrics.js"></script>
+<script src="js/macros.js"></script>
 <script src="js/account.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/app.js"></script>

@@ -139,7 +139,18 @@ function renderPlanner() {
 function selProtoMonth(m){cProtoMonth=m;renderPlanner();}
 function selWeek(w){cW=w;renderPlanner();}
 function selDay(d){cD=d;renderPlanner();}
-function toggleTask(i){var k=ckKey(cD,i);chk[k]=!chk[k];save();renderPlanner();}
+function toggleTask(i){
+  var k=ckKey(cD,i);chk[k]=!chk[k];
+  if(chk[k]){
+    var ts=buildSchedule(cD,cProtoMonth,globalWeek());
+    var t=ts[i];
+    if(t&&t.tag==='nutrition'){
+      var m=t.task.match(/^(Breakfast|Lunch|Dinner|Snack):\s*(.+)/i);
+      if(m)logMealMacro(t.task);
+    }
+  }
+  save();renderPlanner();
+}
 function resetDay(){var ts=buildSchedule(cD,cProtoMonth,globalWeek());ts.forEach(function(_,i){delete chk[ckKey(cD,i)];});save();renderPlanner();}
 
 function toggleBanner(){

@@ -25,6 +25,9 @@ var weekScores = JSON.parse(localStorage.getItem('ac_wscores')  || '{}');
 var weekMiles  = JSON.parse(localStorage.getItem('ac_wmiles')   || '{}');
 // earned badges set
 var earnedBadges = JSON.parse(localStorage.getItem('ac_badges') || '[]');
+// macro logs keyed by YYYY-MM-DD; macro AI estimate cache keyed by meal name
+var macros     = JSON.parse(localStorage.getItem('ac_macros')  || '{}');
+var macroCache = JSON.parse(localStorage.getItem('ac_mcache')  || '{}');
 
 var cProtoMonth = 1;
 var cW = 1;
@@ -45,6 +48,8 @@ function save() {
   localStorage.setItem('ac_wscores', JSON.stringify(weekScores));
   localStorage.setItem('ac_wmiles',  JSON.stringify(weekMiles));
   localStorage.setItem('ac_badges',  JSON.stringify(earnedBadges));
+  localStorage.setItem('ac_macros',  JSON.stringify(macros));
+  localStorage.setItem('ac_mcache',  JSON.stringify(macroCache));
   sbWrite();
 }
 
@@ -95,7 +100,7 @@ function sbWrite(){
   syncTimer=setTimeout(function(){
     setSyncUI('saving');
     function doWrite(retry){
-      fetch(SB_URL+'/rest/v1/user_data?on_conflict=user_id',{method:'POST',headers:Object.assign(authHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({user_id:authUserId,chk:chk,ovr:ovr,bio:bio,prs:prs,ach:ach,glc:glc,goals:goals,mission:mission,chat:chatHist,wscores:weekScores,wmiles:weekMiles,badges:earnedBadges,updated_at:new Date().toISOString()})})
+      fetch(SB_URL+'/rest/v1/user_data?on_conflict=user_id',{method:'POST',headers:Object.assign(authHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({user_id:authUserId,chk:chk,ovr:ovr,bio:bio,prs:prs,ach:ach,glc:glc,goals:goals,mission:mission,chat:chatHist,wscores:weekScores,wmiles:weekMiles,badges:earnedBadges,macros:macros,macro_cache:macroCache,updated_at:new Date().toISOString()})})
       .then(function(r){
         if(r.status===401&&retry){sbRefresh(function(err){if(!err)doWrite(false);else setSyncUI('err');});return;}
         setSyncUI(r.ok?'ok':'err');
@@ -109,6 +114,7 @@ function applyRemoteData(d){
   if(d.ach)ach=d.ach;if(d.glc)glc=d.glc;if(d.goals)goals=d.goals;if(d.mission)mission=d.mission;
   if(d.chat){chatHist=d.chat;localStorage.setItem('ac_chat',JSON.stringify(chatHist));}
   if(d.wscores)weekScores=d.wscores;if(d.wmiles)weekMiles=d.wmiles;if(d.badges)earnedBadges=d.badges;
+  if(d.macros)macros=d.macros;if(d.macro_cache)macroCache=d.macro_cache;
 }
 function sbLoad(cb){
   if(!authToken){cb();return;}
@@ -170,6 +176,8 @@ function startRealtimeSync(){
       if(d.wscores){weekScores=d.wscores;localStorage.setItem('ac_wscores', JSON.stringify(weekScores));}
       if(d.wmiles){weekMiles=d.wmiles;   localStorage.setItem('ac_wmiles',  JSON.stringify(weekMiles));}
       if(d.badges){earnedBadges=d.badges;localStorage.setItem('ac_badges',  JSON.stringify(earnedBadges));}
+      if(d.macros){macros=d.macros;        localStorage.setItem('ac_macros',  JSON.stringify(macros));}
+      if(d.macro_cache){macroCache=d.macro_cache;localStorage.setItem('ac_mcache',JSON.stringify(macroCache));}
       setSyncUI('ok');
       if(typeof renderPlanner==='function')renderPlanner();
       if(typeof renderMetrics==='function')renderMetrics();

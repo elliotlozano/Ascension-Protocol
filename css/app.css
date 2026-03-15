@@ -270,3 +270,39 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .chat-send:active{transform:scale(.92)}
 .chat-send svg{width:16px;height:16px}
 .chat-hint{font-size:11px;color:var(--mu);text-align:center;margin-top:6px;font-weight:500}
+
+/* ── Macro Tracker ── */
+.mtr-page{display:none;flex-direction:column;height:100%;overflow:hidden}
+.mtr-page.on{display:flex}
+.mac-card-hdr{user-select:none}
+.mac-tabs{display:flex;gap:6px;padding:0 0 12px;flex-shrink:0}
+.mac-tab{flex:1;padding:8px 0;border-radius:10px;font-size:13px;font-weight:600;background:var(--s2);color:var(--mu);border:1px solid var(--b);transition:all var(--tr)}
+.mac-tab.on{background:var(--a);color:#1c1c1e;border-color:var(--a)}
+.mac-bars{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.mac-bar-row{display:flex;align-items:center;gap:8px}
+.mac-bar-label{width:56px;font-size:12px;font-weight:600;color:var(--mu);text-transform:capitalize}
+.mac-bar-track{flex:1;height:6px;border-radius:3px;background:var(--brd);overflow:hidden}
+.mac-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.mac-bar-val{width:64px;text-align:right;font-size:12px;font-weight:700;color:var(--t)}
+.mac-bar-val span{font-weight:400;color:var(--mu)}
+.mac-meals-list{display:flex;flex-direction:column;gap:1px}
+.mac-meal-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--brd)}
+.mac-meal-row:last-child{border-bottom:none}
+.mac-meal-name{flex:1;font-size:13px;font-weight:500;color:var(--t)}
+.mac-meal-chips{display:flex;gap:5px;flex-shrink:0}
+.mac-chip{font-size:11px;font-weight:600;color:var(--mu)}
+.mac-meal-cal{font-size:12px;font-weight:700;color:var(--mu);width:52px;text-align:right;flex-shrink:0}
+.mac-week-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--brd)}
+.mac-week-row:last-child{border-bottom:none}
+.mac-week-row.today .mac-week-date{color:var(--a)}
+.mac-week-date{font-size:13px;font-weight:700;color:var(--t);width:36px;flex-shrink:0}
+.mac-week-date span{display:block;font-size:10px;font-weight:400;color:var(--mu)}
+.mac-week-bars{flex:1}
+.mac-week-right{text-align:right;flex-shrink:0;width:56px}
+.mac-week-kcal{font-size:13px;font-weight:700;color:var(--t)}
+.mac-week-prot{font-size:10px;color:var(--mu);font-weight:500}
+.insight-card{background:var(--s2);border:1px solid var(--a);border-radius:14px;padding:16px;margin-bottom:10px}
+.insight-title{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.insight-stat{font-size:28px;font-weight:800;color:var(--t);line-height:1.1;margin-bottom:2px}
+.insight-pct{font-size:14px;font-weight:500;color:var(--mu);margin-left:6px}
+.insight-nudge{font-size:12px;color:var(--mu);margin-top:6px;line-height:1.4}
