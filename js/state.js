@@ -3,8 +3,9 @@
 var SB_URL = 'https://xxfvshxhkwsftcsgatwc.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4ZnZzaHhoa3dzZnRjc2dhdHdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjY5NzUsImV4cCI6MjA4ODgwMjk3NX0.zt4W9dV85d8ASAMZPMk-QQNhMZqnxMu3xznYpyXenGs';
 var syncTimer = null;
-var authToken = localStorage.getItem('ac_tok') || null;
-var authUserId = localStorage.getItem('ac_uid') || null;
+var authToken        = localStorage.getItem('ac_tok')  || null;
+var authRefreshToken = localStorage.getItem('ac_rtok') || null;
+var authUserId       = localStorage.getItem('ac_uid')  || null;
 var rtClient  = null;
 var rtChannel = null;
 
@@ -53,11 +54,39 @@ function authHeaders() {
 function sbSignIn(email, password, cb) {
   fetch(SB_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({email:email,password:password})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.access_token){authToken=d.access_token;authUserId=d.user.id;localStorage.setItem('ac_tok',authToken);localStorage.setItem('ac_uid',authUserId);cb(null);}
-    else cb(d.error_description||d.msg||'Invalid credentials');
+    if(d.access_token){
+      authToken=d.access_token;
+      authRefreshToken=d.refresh_token||null;
+      authUserId=d.user.id;
+      localStorage.setItem('ac_tok',authToken);
+      localStorage.setItem('ac_uid',authUserId);
+      if(authRefreshToken)localStorage.setItem('ac_rtok',authRefreshToken);
+      cb(null);
+    } else cb(d.error_description||d.msg||'Invalid credentials');
   }).catch(function(){cb('Connection error');});
 }
-function sbSignOut(){stopRealtimeSync();authToken=null;authUserId=null;localStorage.removeItem('ac_tok');localStorage.removeItem('ac_uid');showLoginScreen();}
+function sbSignOut(){stopRealtimeSync();authToken=null;authRefreshToken=null;authUserId=null;localStorage.removeItem('ac_tok');localStorage.removeItem('ac_rtok');localStorage.removeItem('ac_uid');showLoginScreen();}
+
+// Decode JWT exp claim without a library — returns true if expired or unreadable
+function tokenExpired(tok){
+  try{var p=JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));return p.exp<Math.floor(Date.now()/1000);}
+  catch(e){return true;}
+}
+
+// Exchange refresh token for a new access token, update stored credentials
+function sbRefresh(cb){
+  if(!authRefreshToken){cb(new Error('no_refresh'));return;}
+  fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({refresh_token:authRefreshToken})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.access_token){
+      authToken=d.access_token;
+      authRefreshToken=d.refresh_token||authRefreshToken;
+      localStorage.setItem('ac_tok',authToken);
+      localStorage.setItem('ac_rtok',authRefreshToken);
+      cb(null);
+    } else cb(new Error(d.error_description||'refresh_failed'));
+  }).catch(function(e){cb(e);});
+}
 
 function setSyncUI(s){var map={ok:'✦ Synced',saving:'↑ Saving…',err:'⚠ Offline',loading:'↓ Loading…'};var col={ok:'var(--sg)',saving:'var(--a)',err:'#c0504a',loading:'var(--a)'};var el=document.getElementById('syncStatus');if(el){el.textContent=map[s]||'';el.style.color=col[s]||'var(--mu)';}}
 function sbWrite(){
@@ -65,22 +94,52 @@ function sbWrite(){
   clearTimeout(syncTimer);
   syncTimer=setTimeout(function(){
     setSyncUI('saving');
-    fetch(SB_URL+'/rest/v1/user_data?on_conflict=user_id',{method:'POST',headers:Object.assign(authHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({user_id:authUserId,chk:chk,ovr:ovr,bio:bio,prs:prs,ach:ach,glc:glc,goals:goals,mission:mission,chat:chatHist,wscores:weekScores,wmiles:weekMiles,badges:earnedBadges,updated_at:new Date().toISOString()})})
-    .then(function(r){setSyncUI(r.ok?'ok':'err');}).catch(function(){setSyncUI('err');});
+    function doWrite(retry){
+      fetch(SB_URL+'/rest/v1/user_data?on_conflict=user_id',{method:'POST',headers:Object.assign(authHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({user_id:authUserId,chk:chk,ovr:ovr,bio:bio,prs:prs,ach:ach,glc:glc,goals:goals,mission:mission,chat:chatHist,wscores:weekScores,wmiles:weekMiles,badges:earnedBadges,updated_at:new Date().toISOString()})})
+      .then(function(r){
+        if(r.status===401&&retry){sbRefresh(function(err){if(!err)doWrite(false);else setSyncUI('err');});return;}
+        setSyncUI(r.ok?'ok':'err');
+      }).catch(function(){setSyncUI('err');});
+    }
+    doWrite(true);
   },800);
+}
+function applyRemoteData(d){
+  if(d.chk)chk=d.chk;if(d.ovr)ovr=d.ovr;if(d.bio)bio=d.bio;if(d.prs)prs=d.prs;
+  if(d.ach)ach=d.ach;if(d.glc)glc=d.glc;if(d.goals)goals=d.goals;if(d.mission)mission=d.mission;
+  if(d.chat){chatHist=d.chat;localStorage.setItem('ac_chat',JSON.stringify(chatHist));}
+  if(d.wscores)weekScores=d.wscores;if(d.wmiles)weekMiles=d.wmiles;if(d.badges)earnedBadges=d.badges;
 }
 function sbLoad(cb){
   if(!authToken){cb();return;}
   setSyncUI('loading');
-  fetch(SB_URL+'/rest/v1/user_data?user_id=eq.'+authUserId+'&select=*',{headers:authHeaders()})
-  .then(function(r){return r.json();}).then(function(rows){
-    if(rows&&rows.length){var d=rows[0];
-      if(d.chk)chk=d.chk;if(d.ovr)ovr=d.ovr;if(d.bio)bio=d.bio;if(d.prs)prs=d.prs;
-      if(d.ach)ach=d.ach;if(d.glc)glc=d.glc;if(d.goals)goals=d.goals;if(d.mission)mission=d.mission;
-      if(d.chat){chatHist=d.chat;localStorage.setItem('ac_chat',JSON.stringify(chatHist));}
-      if(d.wscores)weekScores=d.wscores;if(d.wmiles)weekMiles=d.wmiles;if(d.badges)earnedBadges=d.badges;}
-    setSyncUI('ok');cb();
-  }).catch(function(){setSyncUI('err');cb();});
+  // Proactively refresh before the fetch if the token is already expired
+  function doLoad(retry){
+    fetch(SB_URL+'/rest/v1/user_data?user_id=eq.'+authUserId+'&select=*',{headers:authHeaders()})
+    .then(function(r){
+      if(r.status===401&&retry){
+        sbRefresh(function(err){
+          if(err){setSyncUI('err');showLoginScreen();return;}
+          doLoad(false);
+        });
+        return null;
+      }
+      if(!r.ok){setSyncUI('err');cb();return null;}
+      return r.json();
+    }).then(function(rows){
+      if(!rows)return;
+      if(rows&&rows.length)applyRemoteData(rows[0]);
+      setSyncUI('ok');cb();
+    }).catch(function(){setSyncUI('err');cb();});
+  }
+  if(tokenExpired(authToken)){
+    sbRefresh(function(err){
+      if(err){setSyncUI('err');showLoginScreen();return;}
+      doLoad(false);
+    });
+  } else {
+    doLoad(true);
+  }
 }
 
 function startRealtimeSync(){
