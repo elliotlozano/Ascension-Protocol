@@ -272,7 +272,7 @@ function renderGrocery(){
     var editing=!!glEditMode[cat];
     html+='<div class="gl-sec">'
       +'<div class="gl-sec-hdr"><div class="gl-sh">'+labels[cat]+'</div>'
-      +'<button class="gl-edit-mode-btn" onclick="toggleGroceryEdit(\''+cat+'\')">'+(editing?'Done':'Edit')+'</button></div>';
+      +'<button class="gl-edit-mode-btn" onclick="toggleGroceryEdit(\''+cat+'\')">'+(editing?'Done':'✎')+'</button></div>';
     var customs=glc['custom.'+cat]||[];
     var allItems=[];
     items[cat].forEach(function(item,i){allItems.push({item:item,key:'gl.'+cat+'.'+i,type:'gen',idx:i});});
@@ -290,7 +290,7 @@ function renderGrocery(){
       }
       html+='</div>';
     });
-    html+='<div class="gl-add-row"><input class="gl-add-inp" id="glInp-'+cat+'" placeholder="Add item..." type="text"><button class="gl-add-btn" onclick="addGroceryItem(\''+cat+'\')">+ Add</button></div>';
+    html+='<div class="gl-add-row"><input class="gl-add-inp" id="glInp-'+cat+'" placeholder="Add item..." type="text"><button class="gl-add-btn" onclick="addGroceryItem(\''+cat+'\')">+</button></div>';
     if(checked.length){
       html+='<div class="gl-done-sep">';
       checked.forEach(function(obj){

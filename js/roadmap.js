@@ -32,7 +32,7 @@ function cancelMission(){
   document.getElementById('missionTa').classList.remove('open');
   document.getElementById('missionFull').style.display='block';
   document.getElementById('missionActions').style.display='none';
-  document.getElementById('missionBtn').textContent='Edit';
+  document.getElementById('missionBtn').textContent='✎';
 }
 function saveMission(){
   var v=document.getElementById('missionTa').value.trim();
@@ -71,7 +71,7 @@ function toggleGoalBody(id){
 }
 function renderGoals(){
   var el=document.getElementById('goalsList');if(!el)return;
-  if(!goals.length){el.innerHTML='<div style="font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:12px 0 16px">No goals yet. Tap + Add to create one.</div>';return;}
+  if(!goals.length){el.innerHTML='<div style="font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:12px 0 16px">No goals yet. Tap + to create one.</div>';return;}
   var html='';
   goals.forEach(function(g){
     var dateStr=g.date?new Date(g.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';

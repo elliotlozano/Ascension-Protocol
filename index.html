@@ -86,7 +86,7 @@
       </div>
       <div class="rpd" id="missionBody">
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-          <button class="edit-btn" id="missionBtn" onclick="toggleMissionEdit(event)">Edit</button>
+          <button class="edit-btn" id="missionBtn" onclick="toggleMissionEdit(event)">✎</button>
         </div>
         <p id="missionFull" class="mission-full open" style="margin-bottom:0"></p>
         <textarea class="mission-ta" id="missionTa" rows="8"></textarea>
@@ -100,7 +100,7 @@
     <!-- Short-term goals -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;margin-top:4px">
       <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu)">Goals</div>
-      <button onclick="openGoalForm()" style="font-size:12px;color:var(--a);font-weight:700;padding:4px 10px;background:var(--as);border-radius:6px">+ Add</button>
+      <button onclick="openGoalForm()" style="font-size:12px;color:var(--a);font-weight:700;padding:4px 10px;background:var(--as);border-radius:6px">+</button>
     </div>
     <!-- Goal form -->
     <div class="goal-form" id="goalForm">
@@ -136,7 +136,7 @@
   <div class="scroll">
     <div class="macro-card" id="macroCard"></div>
     <div class="bio-card">
-      <div class="bio-hdr"><div class="ct" style="margin-bottom:0">Biometrics</div><button class="edit-btn" id="bioBtn" onclick="toggleBioEdit()">✎ Edit</button></div>
+      <div class="bio-hdr"><div class="ct" style="margin-bottom:0">Biometrics</div><button class="edit-btn" id="bioBtn" onclick="toggleBioEdit()">✎</button></div>
       <div class="bio-grid" id="bioGrid"></div>
       <div class="bio-inputs" id="bioInputs"></div>
     </div>
@@ -209,6 +209,7 @@
 </nav>
 </div><!-- end app -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/data.js"></script>
 <script src="js/state.js"></script>
 <script src="js/schedule.js"></script>

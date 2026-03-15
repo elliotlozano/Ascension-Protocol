@@ -65,6 +65,7 @@ function launchApp(){
   showApp();syncToToday();
   sbLoad(function(){
     renderPlanner();renderMetrics();renderMission();renderGoals();
+    startRealtimeSync();
     // Restore active tab from sessionStorage
     var savedTab=sessionStorage.getItem('ac_tab');
     if(savedTab && ['P','R','M','A'].indexOf(savedTab)!==-1){
