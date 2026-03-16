@@ -9,6 +9,13 @@ function getActualDate(protoMonth, week, day) {
   return d;
 }
 
+function getDateStringForDay(protoMonth, week, day) {
+  var d = getActualDate(protoMonth, week, day);
+  return d.getFullYear() + '-'
+    + String(d.getMonth() + 1).padStart(2, '0') + '-'
+    + String(d.getDate()).padStart(2, '0');
+}
+
 function renderPlanner() {
   var gW = globalWeek();
   var meta = getMeta(cProtoMonth);

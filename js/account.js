@@ -1,6 +1,24 @@
 'use strict';
 
-var glEditMode = {};
+var _glSwipedRow = null;
+function _glSnapBack(){if(_glSwipedRow){_glSwipedRow.style.transform='';_glSwipedRow=null;}}
+
+var SNACK_LOOKUP={
+  'Greek yogurt + almonds + honey':['Greek yogurt (32oz tub)','Almonds','Honey'],
+  'Cottage cheese + sliced peach or pineapple':['Cottage cheese (32oz)','Peach or pineapple'],
+  '2 hard-boiled eggs + carrots + hummus':['Eggs (dozen)','Baby carrots','Hummus'],
+  'Apple + natural almond butter':['Apples','Natural almond butter'],
+  'Edamame + sea salt':['Edamame (frozen, 1 bag)'],
+  'Rice cake + peanut butter + banana':['Rice cakes','Peanut butter','Banana (bunch)'],
+  'Trail mix: almonds + walnuts + pumpkin seeds + cranberries':['Almonds','Walnuts','Pumpkin seeds','Dried cranberries'],
+  'Chomps/Epic bar + almonds':['Chomps or Epic bars','Almonds'],
+  'Chocolate-covered pretzels + string cheese':['Chocolate-covered pretzels','String cheese'],
+  'Protein bar (Quest or RXBar)':['Protein bars (Quest or RXBar)'],
+  'Pepperoni + cheddar + crackers':['Pepperoni','Cheddar cheese','Whole grain crackers'],
+  'Dark chocolate (70%+) + mixed nuts':['Dark chocolate (70%+)','Mixed nuts'],
+  'Beef jerky + apple slices':['Beef jerky (low sodium)','Apples'],
+  'Light popcorn + string cheese':['Light popcorn','String cheese']
+};
 
 // Feature 7: Nizoral removed — only Finasteride and Dutasteride remain
 var GUIDE_DATA = {
@@ -283,28 +301,58 @@ function clearChatMemory(){chatHist=[];localStorage.removeItem('ac_chat');save()
 // ── Grocery ───────────────────────────────────────────────────
 function getNextWeekLabel(){var now=new Date(),dow=now.getDay(),daysToSat=(6-dow+7)%7||7,sat=new Date(now);sat.setDate(now.getDate()+daysToSat);var mon=new Date(sat);mon.setDate(sat.getDate()+1);var fmt=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});};return'Week of '+fmt(mon)+' – '+fmt(new Date(mon.getTime()+6*86400000));}
 function buildGroceryItems(){
-  var nextW=(globalWeek()%52)+1;
+  // Friday auto-reset
+  var today=todayKey();
+  var now=new Date();
+  if(now.getDay()===5&&glc.lastReset!==today){
+    Object.keys(glc).forEach(function(k){if(k!=='lastReset')delete glc[k];});
+    glc.lastReset=today;
+    save();
+  }
+  var nextW=globalWeek()+1;
   var protein=[],seen={};
   var pm={salmon:['Salmon (2 lbs)'],beef:['Lean ground beef (1 lb)'],chicken:['Chicken thighs or breast (2 lbs)'],shrimp:['Shrimp (1 lb)'],pork:['Pork tenderloin (1 lb)'],bison:['Ground bison (1 lb)'],cod:['Cod fillets (1 lb)'],turkey:['Ground turkey (1 lb)'],tuna:['Tuna steak (1 lb)'],steak:['Sirloin steak (1 lb)']};
   ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var din=getDinner(nextW,d)||'';Object.keys(pm).forEach(function(p){if(din.toLowerCase().indexOf(p)!==-1){pm[p].forEach(function(item){if(!seen[item]){seen[item]=true;protein.push(item);}});}});});
   protein.push('Eggs (dozen)','Chicken breast (meal prep)');
-  var raw={protein:protein,produce:['Spinach / mixed greens (bag)','Broccoli','Sweet potato (3–4)','Brussels sprouts','Zucchini','Cherry tomatoes','Banana (bunch)','Berries (frozen, 1 bag)','Avocado (3–4)','Cucumber','Baby carrots'],grains:['Brown rice (bag)','Rolled oats (large container)','Sprouted grain / Ezekiel bread','Quinoa','Whole wheat pasta','Rice cakes'],dairy:['Greek yogurt (32oz tub)','Cottage cheese (32oz)','Almond milk (half gallon)','String cheese','Feta (small block)'],pantry:['Natural almond butter','Protein powder','Olive oil','Low-sodium soy sauce','Hot sauce','Honey','Almonds / mixed nuts','Casein protein']};
+  var snackSeen={},snackItems=[];
+  DAYS.forEach(function(d){
+    var sn=getSnack(nextW,d)||'';
+    var mapped=SNACK_LOOKUP[sn];
+    if(mapped){mapped.forEach(function(item){if(!snackSeen[item]){snackSeen[item]=true;snackItems.push(item);}});}
+  });
+  var raw={
+    protein:protein,
+    produce:['Spinach / mixed greens (bag)','Broccoli','Sweet potato (3–4)','Brussels sprouts','Zucchini','Cherry tomatoes','Banana (bunch)','Berries (frozen, 1 bag)','Avocado (3–4)','Cucumber','Baby carrots'],
+    grains:['Brown rice (bag)','Rolled oats (large container)','Sprouted grain / Ezekiel bread','Quinoa','Whole wheat pasta','Rice cakes'],
+    dairy:['Greek yogurt (32oz tub)','Cottage cheese (32oz)','Almond milk (half gallon)','String cheese','Feta (small block)'],
+    snacks:snackItems,
+    pantry:['Natural almond butter','Protein powder','Olive oil','Low-sodium soy sauce','Hot sauce','Honey','Almonds / mixed nuts','Casein protein']
+  };
   Object.keys(raw).forEach(function(cat){
     raw[cat]=raw[cat].filter(function(item,i){return !glc['del.'+cat+'.'+i];}).map(function(item,i){return glc['edit.'+cat+'.'+i]||item;});
   });
   return raw;
 }
 function renderGrocery(){
+  _glSwipedRow=null;
   document.getElementById('glWeekLabel').textContent=getNextWeekLabel();
+  var nextGW=globalWeek()+1;
+  var dinCard=document.getElementById('glDinnerCard');
+  if(dinCard){
+    var dh='<div class="card"><div class="ct">Next Week\'s Dinners</div>';
+    ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){
+      var dn=getDinner(nextGW,d)||'—';
+      dh+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(dn)+'</span></div>';
+    });
+    dh+='</div>';
+    dinCard.innerHTML=dh;
+  }
   var items=buildGroceryItems();
-  var labels={protein:'Protein',produce:'Produce',grains:'Grains & Carbs',dairy:'Dairy & Eggs',pantry:'Pantry & Supplements'};
+  var labels={protein:'Protein',produce:'Produce',grains:'Grains & Carbs',dairy:'Dairy & Eggs',snacks:'Snacks',pantry:'Pantry & Supplements'};
   var chkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4L3.5 6.5L9 1"/></svg>';
   var html='';
   Object.keys(labels).forEach(function(cat){
-    var editing=!!glEditMode[cat];
-    html+='<div class="gl-sec">'
-      +'<div class="gl-sec-hdr"><div class="gl-sh">'+labels[cat]+'</div>'
-      +'<button class="gl-edit-mode-btn" onclick="toggleGroceryEdit(\''+cat+'\')">'+(editing?'Done':'✎')+'</button></div>';
+    html+='<div class="gl-sec"><div class="gl-sh">'+labels[cat]+'</div>';
     var customs=glc['custom.'+cat]||[];
     var allItems=[];
     items[cat].forEach(function(item,i){allItems.push({item:item,key:'gl.'+cat+'.'+i,type:'gen',idx:i});});
@@ -312,29 +360,25 @@ function renderGrocery(){
     var unchecked=[],checked=[];
     allItems.forEach(function(obj){if(glc[obj.key])checked.push(obj);else unchecked.push(obj);});
     unchecked.forEach(function(obj){
-      html+='<div class="gl-item" id="gli-'+obj.key.replace(/\./g,'-')+'">';
-      if(editing){
-        html+='<div class="gl-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">−</div>';
-        html+='<input class="gl-edit-inp" value="'+escHtml(obj.item)+'" onchange="editGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+',this.value)">';
-      } else {
-        html+='<div class="gl-chk" onclick="toggleGrocery(\''+obj.key+'\')"></div>';
-        html+='<span class="gl-name">'+escHtml(obj.item)+'</span>';
-      }
-      html+='</div>';
+      var sk=obj.key.replace(/\./g,'-');
+      html+='<div class="gl-item-wrap">'
+        +'<button class="gl-del-reveal-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">Delete</button>'
+        +'<div class="gl-item" id="gli-'+sk+'">'
+        +'<div class="gl-chk" onclick="toggleGrocery(\''+obj.key+'\')"></div>'
+        +'<span class="gl-name" onclick="openGroceryInlineEdit(this,\''+cat+'\',\''+obj.type+'\','+obj.idx+')">'+escHtml(obj.item)+'</span>'
+        +'</div></div>';
     });
     html+='<div class="gl-add-row"><input class="gl-add-inp" id="glInp-'+cat+'" placeholder="Add item..." type="text"><button class="gl-add-btn" onclick="addGroceryItem(\''+cat+'\')">+</button></div>';
     if(checked.length){
       html+='<div class="gl-done-sep">';
       checked.forEach(function(obj){
-        html+='<div class="gl-item">';
-        if(editing){
-          html+='<div class="gl-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">−</div>';
-          html+='<span class="gl-name done">'+escHtml(obj.item)+'</span>';
-        } else {
-          html+='<div class="gl-chk on" onclick="toggleGrocery(\''+obj.key+'\')">'+chkSvg+'</div>';
-          html+='<span class="gl-name done">'+escHtml(obj.item)+'</span>';
-        }
-        html+='</div>';
+        var sk=obj.key.replace(/\./g,'-');
+        html+='<div class="gl-item-wrap">'
+          +'<button class="gl-del-reveal-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">Delete</button>'
+          +'<div class="gl-item" id="gli-'+sk+'">'
+          +'<div class="gl-chk on" onclick="toggleGrocery(\''+obj.key+'\')">'+chkSvg+'</div>'
+          +'<span class="gl-name done">'+escHtml(obj.item)+'</span>'
+          +'</div></div>';
       });
       html+='</div>';
     }
@@ -342,11 +386,52 @@ function renderGrocery(){
   });
   document.getElementById('glBody').innerHTML=html;
   Object.keys(labels).forEach(function(cat){var inp=document.getElementById('glInp-'+cat);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')addGroceryItem(cat);});});
+  attachGrocerySwipe();
 }
-function toggleGroceryEdit(cat){glEditMode[cat]=!glEditMode[cat];renderGrocery();}
+function openGroceryInlineEdit(spanEl,cat,type,idx){
+  if(_glSwipedRow){_glSnapBack();return;}
+  var current=spanEl.textContent;
+  var inp=document.createElement('input');
+  inp.className='gl-edit-inp';
+  inp.value=current;
+  inp.style.flex='1';
+  var committed=false;
+  function commit(){
+    if(committed)return;committed=true;
+    var val=inp.value.trim();
+    if(val&&val!==current)editGroceryItem(cat,type,idx,val);
+    renderGrocery();
+  }
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();inp.blur();}
+    if(e.key==='Escape'){e.preventDefault();committed=true;renderGrocery();}
+  });
+  spanEl.parentNode.replaceChild(inp,spanEl);
+  inp.focus();inp.select();
+}
+function attachGrocerySwipe(){
+  document.querySelectorAll('#glBody .gl-item[id^="gli-"]').forEach(function(item){
+    var tx=0,ty=0;
+    item.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+    item.addEventListener('touchend',function(e){
+      var dx=e.changedTouches[0].clientX-tx;
+      var dy=Math.abs(e.changedTouches[0].clientY-ty);
+      if(dy>Math.abs(dx)||Math.abs(dx)<8)return;
+      if(dx<-40){
+        if(_glSwipedRow&&_glSwipedRow!==item){_glSwipedRow.style.transform='';}
+        item.style.transform='translateX(-80px)';
+        _glSwipedRow=item;
+      }else if(dx>20&&_glSwipedRow===item){
+        _glSnapBack();
+      }
+    },{passive:true});
+  });
+}
 function toggleGrocery(key){glc[key]=!glc[key];save();renderGrocery();}
 function addGroceryItem(cat){var inp=document.getElementById('glInp-'+cat);if(!inp)return;var v=inp.value.trim();if(!v)return;if(!glc['custom.'+cat])glc['custom.'+cat]=[];glc['custom.'+cat].push(v);save();renderGrocery();}
 function deleteGroceryItem(cat,type,idx){
+  _glSwipedRow=null;
   if(type==='custom'){var customs=glc['custom.'+cat]||[];customs.splice(idx,1);glc['custom.'+cat]=customs;}
   else{glc['del.'+cat+'.'+idx]=true;}
   save();renderGrocery();

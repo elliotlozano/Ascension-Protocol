@@ -197,7 +197,9 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .gl-week{font-size:13px;color:var(--mu);font-weight:600;margin-bottom:14px;text-align:center}
 .gl-sec{margin-bottom:16px}
 .gl-sh{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:8px}
-.gl-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b)}
+.gl-item-wrap{position:relative;overflow:hidden}
+.gl-del-reveal-btn{position:absolute;right:0;top:0;bottom:0;width:80px;background:#c0504a;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:0}
+.gl-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b);background:var(--bg);position:relative;z-index:1;transition:transform .25s ease}
 .gl-item:last-child{border-bottom:none}
 .gl-chk{width:20px;height:20px;border-radius:6px;border:2px solid var(--b2);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--tr)}
 .gl-chk.on{background:var(--sg);border-color:var(--sg)}
@@ -211,8 +213,6 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .gl-del-btn{width:22px;height:22px;border-radius:50%;background:#c0504a22;color:#c0504a;font-size:16px;font-weight:300;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;transition:all var(--tr)}
 .gl-del-btn:active{transform:scale(.88)}
 .gl-edit-inp{flex:1;background:var(--s2);border:1.5px solid var(--a);border-radius:7px;padding:5px 8px;color:var(--t);font-size:14px;outline:none}
-.gl-sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.gl-edit-mode-btn{font-size:11px;font-weight:600;color:var(--mu);padding:3px 8px;background:var(--s2);border-radius:6px;border:1px solid var(--b)}
 /* Achievements & Badges */
 .ach-sec{margin-bottom:4px}
 .ach-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}

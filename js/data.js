@@ -5,6 +5,23 @@ var DSUB = {Monday:'Push A · Gym',Tuesday:'Pull A · Gym',Wednesday:'Zone 2 Run
 var TAGS = {nutrition:'nu',gym:'gy',skincare:'sk',supplement:'su',hair:'ha',cardio:'ca',sleep:'sl',admin:'ad',shower:'sh'};
 var PROTO_START = new Date(2026,2,9); // March 9 2026
 
+// Override key reference:
+//   Rotation overrides  : bf.{gWeek}.{Day}  din.{0-15}  sn.{gWeek}.{Day}  monlunch
+//   Date-scoped (1-time): bf.actual.{YYYY-MM-DD}  din.actual.{YYYY-MM-DD}
+//                         lunch.actual.{YYYY-MM-DD}  sn.actual.{YYYY-MM-DD}
+//   Other               : m.{month}.{key}  wo.{Mon|Tue|Fri|SatA|SatB}
+
+// Returns YYYY-MM-DD string for a given protocol month/week/day combination
+function getDateStringForDay(protoMonth, week, day) {
+  var gw = (protoMonth - 1) * 4 + week;
+  var dayIdx = DAYS.indexOf(day);
+  var d = new Date(PROTO_START);
+  d.setDate(d.getDate() + (gw - 1) * 7 + dayIdx);
+  return d.getFullYear() + '-'
+    + String(d.getMonth() + 1).padStart(2, '0') + '-'
+    + String(d.getDate()).padStart(2, '0');
+}
+
 var DEFAULT_MISSION = "I'm 30. I have an athletic background, a decade of drift, and a clear picture of where I'm going.\n\nThis isn't about getting back in shape. It's about building something I've never actually finished — a body that performs at its ceiling, sustained by habits that don't slip. Training, nutrition, recovery, skincare. Every system running in parallel, nothing half-assed.\n\nThe physique goal is specific and I'm not apologizing for it. The running goal has a race on the calendar. The 3-year roadmap has milestones at every phase.\n\nYear 1 builds the foundation everything else stands on. I'm not starting over — I'm starting with more than I had the first time.";
 
 var PHASES = [
