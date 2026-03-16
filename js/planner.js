@@ -49,7 +49,7 @@ function renderPlanner() {
       }
     }
     var pctColor = weekPct >= 90 ? 'var(--a)' : 'var(--mu)';
-    scoreEl.innerHTML = '<div class="momentum-lbl">Momentum</div><div class="momentum-val" style="color:'+pctColor+'">'+fireHtml+weekPct+'%</div>';
+    scoreEl.innerHTML = '<div class="momentum-lbl">Momentum</div><div class="momentum-val" style="color:'+pctColor+'">'+fireHtml+weekPct+'% <span class="mom-chev">›</span></div>';
   }
 
   // Phase strip
@@ -183,4 +183,239 @@ function syncToToday(){
   }
   var js=now.getDay();
   cD=DAYS[js===0?6:js-1];
+}
+
+// ── Momentum sub-page ──────────────────────────────────────────────────────
+
+var _momTab='week';
+
+var _MOM_TAG_COLORS={nutrition:'#7a9e87',gym:'#6b8cae',skincare:'#9e7a90',supplement:'#a89530',hair:'#a07a58',cardio:'#6a9aaa',sleep:'#7a6aaa',admin:'#888888',shower:'#5a9a9a'};
+var _MOM_TAG_LABELS={nutrition:'Nutrition',gym:'Gym',skincare:'Skincare',supplement:'Supplement',hair:'Hair',cardio:'Cardio',sleep:'Sleep',admin:'Admin',shower:'Shower'};
+
+function openMomentumPage(){
+  document.getElementById('pageProtocolMain').classList.remove('on');
+  document.getElementById('pageMomentum').classList.add('on');
+  selMomentumTab(_momTab);
+}
+function closeMomentumPage(){
+  document.getElementById('pageMomentum').classList.remove('on');
+  document.getElementById('pageProtocolMain').classList.add('on');
+}
+function selMomentumTab(t){
+  _momTab=t;
+  ['week','history','insights'].forEach(function(id){
+    document.getElementById('momTab-'+id).classList.toggle('on',id===t);
+    document.getElementById('momSec-'+id).style.display=(id===t?'block':'none');
+  });
+  if(t==='week')       renderMomentumThisWeek();
+  else if(t==='history')renderMomentumHistory();
+  else                  renderMomentumInsights();
+}
+
+// ── category stats helper ─────────────────────────────────────────────────
+function _momCatStats(){
+  var gW=globalWeek();
+  var total={},done={};
+  DAYS.forEach(function(d){
+    var ts=buildSchedule(d,cProtoMonth,gW);
+    ts.forEach(function(task,i){
+      var tag=task.tag;
+      if(!total[tag]){total[tag]=0;done[tag]=0;}
+      total[tag]++;
+      if(chk[ckKey(d,i)])done[tag]++;
+    });
+  });
+  return Object.keys(total).filter(function(t){return total[t]>0;}).map(function(tag){
+    return{tag:tag,pct:Math.round(done[tag]/total[tag]*100),done:done[tag],total:total[tag]};
+  });
+}
+
+// ── This Week tab ─────────────────────────────────────────────────────────
+function renderMomentumThisWeek(){
+  var gW=globalWeek();
+  var meta=getMeta(cProtoMonth);
+  var phaseColor=meta.hl;
+
+  // Overall week score
+  var totalT=0,totalD=0;
+  DAYS.forEach(function(d){
+    var ts=buildSchedule(d,cProtoMonth,gW);
+    totalT+=ts.length;
+    ts.forEach(function(_,i){if(chk[ckKey(d,i)])totalD++;});
+  });
+  var weekPct=totalT>0?Math.round(totalD/totalT*100):0;
+
+  var isBlue=weekScores['gw'+(gW-1)]>=90&&weekScores['gw'+(gW-2)]>=90;
+  var fireHtml='';
+  if(weekPct>=90)fireHtml=(isBlue?'<span style="filter:hue-rotate(200deg);display:inline-block">🔥</span>':'🔥')+' ';
+
+  // Hero
+  var html='<div class="mom-hero">'
+    +'<div class="mom-hero-pct" style="color:'+phaseColor+'">'+fireHtml+weekPct+'%</div>'
+    +'<div class="mom-hero-lbl">This Week</div>'
+    +'</div>';
+
+  // Day breakdown
+  var now=new Date();
+  var todayName=DAYS[now.getDay()===0?6:now.getDay()-1];
+  html+='<div class="mom-section-hdr">Days</div><div class="mom-day-rows">';
+  DAYS.forEach(function(d){
+    var ts=buildSchedule(d,cProtoMonth,gW);
+    var dn=ts.filter(function(_,i){return!!chk[ckKey(d,i)];}).length;
+    var pct=ts.length>0?Math.round(dn/ts.length*100):0;
+    var barCol=pct===100?'#7a9e87':pct>0?phaseColor:(dark?'#3a3a3c':'#d1d1d6');
+    html+='<div class="mom-day-row'+(d===todayName?' today':'')+'">'
+      +'<div class="mom-day-name">'+d.slice(0,3)+'</div>'
+      +'<div class="mom-bar-track"><div class="mom-bar-fill" style="width:'+pct+'%;background:'+barCol+'"></div></div>'
+      +'<div class="mom-day-pct">'+pct+'%</div>'
+      +'</div>';
+  });
+  html+='</div>';
+
+  // Category breakdown (worst → best)
+  var catEntries=_momCatStats().sort(function(a,b){return a.pct-b.pct;});
+  if(catEntries.length){
+    html+='<div class="mom-section-hdr">By Category</div><div class="mom-cat-rows">';
+    catEntries.forEach(function(e){
+      var col=_MOM_TAG_COLORS[e.tag]||'#888888';
+      var tagCode=TAGS[e.tag]||'ad';
+      var barCol=e.pct===100?'#7a9e87':e.pct>0?col:(dark?'#3a3a3c':'#d1d1d6');
+      html+='<div class="mom-cat-row">'
+        +'<div class="mom-cat-dot" style="background:'+col+'"></div>'
+        +'<div class="mom-cat-name">'+(_MOM_TAG_LABELS[e.tag]||e.tag)+'</div>'
+        +'<div class="mom-bar-track"><div class="mom-bar-fill" style="width:'+e.pct+'%;background:'+barCol+'"></div></div>'
+        +'<div class="mom-cat-pct">'+e.pct+'%</div>'
+        +'</div>';
+    });
+    html+='</div>';
+  }
+
+  document.getElementById('momSec-week').innerHTML=html;
+}
+
+// ── History tab ───────────────────────────────────────────────────────────
+function renderMomentumHistory(){
+  var entries=Object.keys(weekScores).map(function(k){
+    var n=parseInt(k.replace('gw',''),10);
+    return{gw:n,pct:weekScores[k]};
+  }).filter(function(e){return!isNaN(e.gw)&&typeof e.pct==='number';})
+    .sort(function(a,b){return a.gw-b.gw;});
+
+  var avgPct=entries.length?Math.round(entries.reduce(function(s,e){return s+e.pct;},0)/entries.length):0;
+  var bestEntry=entries.reduce(function(b,e){return(!b||e.pct>b.pct)?e:b;},null);
+
+  var html='<div class="mom-stat-row">'
+    +'<div class="mom-stat-card"><div class="mom-stat-lbl">All-Time Avg</div><div class="mom-stat-val">'+(avgPct?avgPct+'%':'—')+'</div></div>'
+    +'<div class="mom-stat-card"><div class="mom-stat-lbl">Best Week</div><div class="mom-stat-val">'+(bestEntry?'W'+bestEntry.gw+' · '+bestEntry.pct+'%':'—')+'</div></div>'
+    +'</div>';
+
+  var graphEntries=entries.slice(-12);
+  var chartId='momHistCanvas';
+  if(graphEntries.length>=2){
+    html+='<canvas id="'+chartId+'" style="width:100%;height:130px;display:block;margin:12px 0"></canvas>';
+  } else {
+    html+='<div class="mom-hist-empty">Complete more weeks to see your trend.</div>';
+  }
+
+  document.getElementById('momSec-history').innerHTML=html;
+
+  if(graphEntries.length<2)return;
+  requestAnimationFrame(function(){
+    var canvas=document.getElementById(chartId);
+    if(!canvas)return;
+    var W=canvas.parentElement.offsetWidth||300,H=130;
+    canvas.width=W*window.devicePixelRatio;canvas.height=H*window.devicePixelRatio;
+    canvas.style.width=W+'px';canvas.style.height=H+'px';
+    var ctx=canvas.getContext('2d');ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+    var pad={l:8,r:32,t:10,b:24},iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
+    var vals=graphEntries.map(function(e){return e.pct;});
+    var xP=function(i){return pad.l+i*(iW/(vals.length-1));};
+    var yP=function(v){return pad.t+iH*(1-v/100);};
+    ctx.clearRect(0,0,W,H);
+    // Grid at 25/50/75/100
+    ctx.strokeStyle=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';ctx.lineWidth=1;
+    [25,50,75,100].forEach(function(v){
+      var y=yP(v);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    });
+    // 90% fire threshold dotted line
+    ctx.setLineDash([4,3]);ctx.strokeStyle='rgba(212,168,83,.5)';ctx.lineWidth=1.5;
+    var y90=yP(90);ctx.beginPath();ctx.moveTo(pad.l,y90);ctx.lineTo(W-pad.r,y90);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#d4a853';ctx.font='bold 8px sans-serif';ctx.textAlign='left';
+    ctx.fillText('90%',W-pad.r+4,y90+3);
+    // Fill
+    var grad=ctx.createLinearGradient(0,pad.t,0,H);
+    grad.addColorStop(0,'rgba(212,168,83,.3)');grad.addColorStop(1,'rgba(212,168,83,.02)');
+    ctx.beginPath();ctx.moveTo(xP(0),yP(vals[0]));
+    for(var i=1;i<vals.length;i++)ctx.lineTo(xP(i),yP(vals[i]));
+    ctx.lineTo(xP(vals.length-1),H-pad.b);ctx.lineTo(xP(0),H-pad.b);
+    ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    // Line
+    ctx.beginPath();ctx.moveTo(xP(0),yP(vals[0]));
+    for(var i=1;i<vals.length;i++)ctx.lineTo(xP(i),yP(vals[i]));
+    ctx.strokeStyle='#d4a853';ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+    // Dots + value labels
+    vals.forEach(function(v,i){
+      ctx.beginPath();ctx.arc(xP(i),yP(v),3,0,Math.PI*2);ctx.fillStyle='#d4a853';ctx.fill();
+      if(i===0||i===vals.length-1||vals.length<=6){
+        ctx.fillStyle=dark?'rgba(255,255,255,.5)':'rgba(0,0,0,.4)';
+        ctx.font='9px sans-serif';ctx.textAlign='center';
+        ctx.fillText(v+'%',xP(i),yP(v)-7);
+      }
+    });
+    // Week labels
+    ctx.fillStyle=dark?'rgba(255,255,255,.3)':'rgba(0,0,0,.3)';ctx.font='9px sans-serif';
+    ctx.textAlign='left';ctx.fillText('W'+graphEntries[0].gw,pad.l,H-6);
+    ctx.textAlign='right';ctx.fillText('W'+graphEntries[graphEntries.length-1].gw,W-pad.r,H-6);
+  });
+}
+
+// ── Insights tab ──────────────────────────────────────────────────────────
+function renderMomentumInsights(){
+  var catEntries=_momCatStats();
+  if(!catEntries.length){
+    document.getElementById('momSec-insights').innerHTML='<div class="mom-hist-empty">No data yet — complete some tasks this week.</div>';
+    return;
+  }
+  var sorted=catEntries.slice().sort(function(a,b){return a.pct-b.pct;});
+  var worst=sorted[0];
+  var best=sorted[sorted.length-1];
+
+  var NEEDS_WORK={
+    skincare:'Try laying out your products the night before to remove friction.',
+    gym:'Review your schedule — identify which sessions are most at risk.',
+    nutrition:'Prep more on Sunday to make weekday meals automatic.',
+    supplement:'Keep supplements visible on the counter — out of sight means forgotten.',
+    sleep:'Set a phone-down alarm 30 minutes before your target sleep time.',
+    cardio:'Block your run on the calendar like a meeting.',
+    admin:'Batch your admin tasks — do them all at once at a set time.',
+    hair:'Add hair steps to your shower routine checklist.',
+    shower:'Tie shower to an existing anchor — right after waking, no exceptions.'
+  };
+  var STRONGEST={
+    nutrition:'Your meal prep is paying off — keep the Sunday routine locked in.',
+    gym:'Showing up consistently is the hardest part. You\'re doing it.',
+    skincare:'Daily SPF and retinol consistency compounds over months. Stay the course.',
+    supplement:'Supplement consistency supports everything else — good habit anchor.',
+    sleep:'Quality sleep is your best recovery tool. Protect it.',
+    cardio:'Running consistency builds the base everything else stands on.'
+  };
+
+  function insightCard(title,body){
+    return '<div class="bn" style="margin-bottom:12px">'
+      +'<div class="bnt">'+escHtml(title)+'</div>'
+      +'<div class="bnb open" style="margin-top:6px;color:var(--t2)">'+escHtml(body)+'</div>'
+      +'</div>';
+  }
+
+  var worstLabel=(_MOM_TAG_LABELS[worst.tag]||worst.tag)+' · '+worst.pct+'%';
+  var worstBody=NEEDS_WORK[worst.tag]||'Focus on consistency over perfection this week.';
+  var bestLabel=(_MOM_TAG_LABELS[best.tag]||best.tag)+' · '+best.pct+'%';
+  var bestBody=STRONGEST[best.tag]||'Your consistency here is building a real habit. Keep going.';
+
+  document.getElementById('momSec-insights').innerHTML=
+    '<div class="mom-section-hdr" style="margin-bottom:8px">Needs Work</div>'
+    +insightCard(worstLabel,worstBody)
+    +'<div class="mom-section-hdr" style="margin-bottom:8px">Strongest</div>'
+    +insightCard(bestLabel,bestBody);
 }

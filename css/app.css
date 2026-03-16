@@ -65,10 +65,14 @@ textarea,input{font-family:var(--fb)}
 .pb{height:3px;background:var(--s3);border-radius:2px;overflow:hidden;margin:10px 0 6px}
 .pf{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.4,0,.2,1)}
 .cb{font-size:12px;color:var(--mu);font-weight:500}
-/* Momentum score */
-.momentum-wrap{text-align:right}
+/* Proto sub-page pattern */
+.proto-page{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+.proto-page.on{display:flex}
+/* Momentum score (tappable) */
+.momentum-wrap{text-align:right;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
 .momentum-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--mu)}
 .momentum-val{font-size:18px;font-weight:700;line-height:1.1}
+.mom-chev{font-size:13px;opacity:.45;margin-left:1px}
 /* Tasks */
 .tl{display:flex;flex-direction:column;gap:6px;margin-top:14px;margin-bottom:20px}
 .ti{display:flex;gap:12px;padding:13px 14px;background:var(--s);border-radius:13px;border:1px solid var(--b);cursor:pointer;align-items:flex-start;box-shadow:var(--sh);transition:all var(--tr)}
@@ -355,3 +359,35 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .bio-hist-date{font-size:13px;color:var(--mu);font-weight:500}
 .bio-del-btn{position:absolute;right:0;top:0;bottom:0;width:80px;background:#c0504a;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;z-index:0}
 .bio-hist-empty{font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:28px 0;line-height:1.6}
+
+/* ── Momentum sub-page ── */
+.mom-tabs{display:flex;gap:6px;padding:0 0 14px;flex-shrink:0}
+.mom-tab{flex:1;padding:8px 0;border-radius:10px;font-size:13px;font-weight:600;background:var(--s2);color:var(--mu);border:1px solid var(--b);transition:all var(--tr)}
+.mom-tab.on{background:var(--a);color:#1c1c1e;border-color:var(--a)}
+/* Hero */
+.mom-hero{text-align:center;padding:18px 0 10px}
+.mom-hero-pct{font-family:var(--fd);font-size:72px;font-weight:600;line-height:1}
+.mom-hero-lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-top:6px}
+/* Section header */
+.mom-section-hdr{font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu);margin:16px 0 8px}
+/* Day rows */
+.mom-day-rows{display:flex;flex-direction:column;gap:2px}
+.mom-day-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;transition:background var(--tr)}
+.mom-day-row.today{background:var(--s2)}
+.mom-day-name{font-size:13px;font-weight:600;color:var(--t2);width:32px;flex-shrink:0}
+.mom-day-pct{font-size:12px;font-weight:700;color:var(--mu);width:36px;text-align:right;flex-shrink:0}
+/* Shared bar */
+.mom-bar-track{flex:1;height:5px;border-radius:3px;background:var(--s3);overflow:hidden}
+.mom-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+/* Category rows */
+.mom-cat-rows{display:flex;flex-direction:column;gap:2px}
+.mom-cat-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px}
+.mom-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mom-cat-name{font-size:13px;font-weight:500;color:var(--t2);width:80px;flex-shrink:0}
+.mom-cat-pct{font-size:12px;font-weight:700;color:var(--mu);width:36px;text-align:right;flex-shrink:0}
+/* History stat cards */
+.mom-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.mom-stat-card{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:14px 16px;box-shadow:var(--sh)}
+.mom-stat-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:6px}
+.mom-stat-val{font-family:var(--fd);font-size:22px;font-weight:600;color:var(--a);line-height:1.1}
+.mom-hist-empty{font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:28px 0;line-height:1.6}

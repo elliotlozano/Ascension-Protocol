@@ -17,8 +17,14 @@ function selTab(t){
     document.getElementById('db-'+x).className='db'+(x===t?' on':'');
   });
   sessionStorage.setItem('ac_tab', t);
+  if(t==='P'){
+    var pm=document.getElementById('pageMomentum');
+    if(pm&&pm.classList.contains('on')){
+      pm.classList.remove('on');
+      document.getElementById('pageProtocolMain').classList.add('on');
+    }
+  }
   if(t==='M'){
-    // Snap back any open Metrics sub-page before rendering main view
     ['pageMacros','pageBiometrics'].forEach(function(id){
       var p=document.getElementById(id);
       if(p&&p.classList.contains('on')){
