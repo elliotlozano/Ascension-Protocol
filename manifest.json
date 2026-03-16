@@ -2,13 +2,14 @@
   "name": "Ascension Protocol",
   "short_name": "Ascension",
   "description": "Your personal performance protocol",
-  "start_url": "/",
+  "start_url": "/Ascension-Protocol/",
+  "scope": "/Ascension-Protocol/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1c1c1e",
   "theme_color": "#1c1c1e",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/Ascension-Protocol/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/Ascension-Protocol/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

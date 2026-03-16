@@ -1,9 +1,9 @@
 'use strict';
 
 // ── Utility: saved flash ──────────────────────────────────────
-function showSavedFlash(el){
+function showSavedFlash(el,msg){
   var f=document.createElement('div');
-  f.textContent='✓ Saved';
+  f.textContent=msg||'✓ Saved';
   f.style.cssText='color:#7a9e87;font-size:12px;font-weight:700;margin-top:6px;opacity:1;transition:opacity .4s ease;text-align:center';
   el.parentNode.insertBefore(f,el.nextSibling);
   setTimeout(function(){f.style.opacity='0';},1100);
@@ -17,7 +17,17 @@ function selTab(t){
     document.getElementById('db-'+x).className='db'+(x===t?' on':'');
   });
   sessionStorage.setItem('ac_tab', t);
-  if(t==='M')renderMetrics();
+  if(t==='M'){
+    // Snap back any open Metrics sub-page before rendering main view
+    ['pageMacros','pageBiometrics'].forEach(function(id){
+      var p=document.getElementById(id);
+      if(p&&p.classList.contains('on')){
+        p.classList.remove('on');
+        document.getElementById('pageMetricsMain').classList.add('on');
+      }
+    });
+    renderMetrics();
+  }
   if(t==='A'){renderSettings();showPage('pageMain');}
   if(t==='R'){renderMission();renderGoals();}
 }

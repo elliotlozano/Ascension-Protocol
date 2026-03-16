@@ -10,11 +10,10 @@ function getMacroDay(dk){
   return macros[dk];
 }
 function macroRingColor(pct){
-  // amber → green linear interpolation
   var t=Math.min(pct,1);
   var r=Math.round(212+(122-212)*t);
   var g=Math.round(168+(158-168)*t);
-  var b=Math.round(83 +(135-83)*t);
+  var b=Math.round(83+(135-83)*t);
   return 'rgb('+r+','+g+','+b+')';
 }
 function macroBarColor(key){
@@ -35,8 +34,7 @@ function last7Days(){
 }
 
 // ── AI macro estimation ────────────────────────────────────────────────────
-function estimateMacros(mealName, cb){
-  // strip "Leftovers: " prefix for cache key consistency
+function estimateMacros(mealName,cb){
   var cacheKey=mealName.replace(/^leftovers:\s*/i,'').toLowerCase().trim();
   if(macroCache[cacheKey]){cb(macroCache[cacheKey]);return;}
   var prompt='Estimate macronutrients for this meal: "'+mealName+'". Reply with ONLY a JSON object, no markdown, no explanation. Format: {"cal":NUMBER,"protein":NUMBER,"carbs":NUMBER,"fat":NUMBER}. All values should be integers representing a reasonable single serving.';
@@ -47,7 +45,6 @@ function estimateMacros(mealName, cb){
   }).then(function(r){return r.json();}).then(function(data){
     try{
       var txt=data.content[0].text.trim();
-      // strip potential markdown code fences
       txt=txt.replace(/^```[a-z]*\n?/,'').replace(/```$/,'').trim();
       var est=JSON.parse(txt);
       if(typeof est.cal==='number'){
@@ -63,13 +60,12 @@ function estimateMacros(mealName, cb){
 function logMealMacro(mealName){
   var dk=todayKey();
   var day=getMacroDay(dk);
-  // idempotency: skip if meal already logged today
   for(var i=0;i<day.meals.length;i++){
     if(day.meals[i].name.toLowerCase()===mealName.toLowerCase())return;
   }
   estimateMacros(mealName,function(est){
     if(!est)return;
-    var day2=getMacroDay(dk); // re-fetch in case async
+    var day2=getMacroDay(dk);
     day2.meals.push({name:mealName,cal:est.cal,protein:est.protein,carbs:est.carbs,fat:est.fat});
     day2.totals.cal    +=est.cal;
     day2.totals.protein+=est.protein;
@@ -77,12 +73,11 @@ function logMealMacro(mealName){
     day2.totals.fat    +=est.fat;
     localStorage.setItem('ac_macros',JSON.stringify(macros));
     save();
-    // refresh macro page if open
     if(document.getElementById('pageMacros').classList.contains('on'))renderMacroToday();
   });
 }
 
-// ── sub-page navigation ────────────────────────────────────────────────────
+// ── Sub-page navigation ────────────────────────────────────────────────────
 var _macTab='today';
 function openMacroPage(){
   document.getElementById('pageMetricsMain').classList.remove('on');
@@ -105,6 +100,8 @@ function selMacroTab(t){
 }
 
 // ── Today tab ─────────────────────────────────────────────────────────────
+var _macManualType='Breakfast';
+
 function renderMacroToday(){
   var dk=todayKey();
   var day=getMacroDay(dk);
@@ -125,7 +122,7 @@ function renderMacroToday(){
     +'<text x="64" y="74" text-anchor="middle" font-size="11" fill="'+(dark?'rgba(255,255,255,.5)':'rgba(0,0,0,.4)')+'">of '+tgt.cal+' kcal</text>'
     +'</svg>';
 
-  // macro bars
+  // Macro bars
   var bars=['protein','carbs','fat'].map(function(k){
     var val=tot[k]||0,target=tgt[k]||1;
     var pct=Math.min(val/target,1)*100;
@@ -137,7 +134,7 @@ function renderMacroToday(){
       +'</div>';
   }).join('');
 
-  // meals list
+  // Meals list
   var mealsHtml=day.meals.length
     ? day.meals.map(function(m){
         return '<div class="mac-meal-row">'
@@ -150,75 +147,178 @@ function renderMacroToday(){
           +'<div class="mac-meal-cal">'+m.cal+' kcal</div>'
           +'</div>';
       }).join('')
-    : '<div style="text-align:center;color:var(--mu);padding:24px 0;font-size:14px">Check off meals in the Protocol tab to log macros.</div>';
+    : '<div class="mac-empty">Check off meals in Protocol or add one manually below.</div>';
 
-  document.getElementById('macSec-today').innerHTML=svgRing+'<div class="mac-bars">'+bars+'</div><div class="mac-meals-list">'+mealsHtml+'</div>';
+  // Manual entry form
+  var types=['Breakfast','Lunch','Dinner','Snack'];
+  var typePills=types.map(function(t){
+    return '<button class="mac-type-pill'+(t===_macManualType?' on':'')+'" onclick="selMacMealType(\''+t+'\')">'+t+'</button>';
+  }).join('');
+
+  var addHtml=''
+    +'<div class="mac-add-row" id="macAddRow" onclick="toggleMacManual()">'
+    +'<span class="mac-add-plus">+</span>'
+    +'<span class="mac-add-label">Add a meal...</span>'
+    +'</div>'
+    +'<div class="mac-add-form" id="macAddForm" style="display:none">'
+    +'<input class="mac-add-inp" id="macAddName" type="text" placeholder="Meal name (e.g. Grilled chicken and rice)">'
+    +'<input class="mac-add-inp" id="macAddIngr" type="text" placeholder="Ingredients (e.g. 6oz chicken, 1 cup rice, broccoli)">'
+    +'<div class="mac-type-pills">'+typePills+'</div>'
+    +'<button class="mac-add-submit" id="macAddSubmit" onclick="addManualMeal()">Add</button>'
+    +'<div style="text-align:center;margin-top:8px"><button class="mac-cancel-btn" onclick="closeMacManual()">Cancel</button></div>'
+    +'</div>';
+
+  document.getElementById('macSec-today').innerHTML=svgRing
+    +'<div class="mac-bars">'+bars+'</div>'
+    +'<div class="mac-meals-list">'+mealsHtml+'</div>'
+    +addHtml;
+}
+
+function toggleMacManual(){
+  var f=document.getElementById('macAddForm');
+  if(!f)return;
+  var open=f.style.display!=='none';
+  f.style.display=open?'none':'block';
+  if(!open){var inp=document.getElementById('macAddName');if(inp)inp.focus();}
+}
+function closeMacManual(){
+  var f=document.getElementById('macAddForm');
+  if(f)f.style.display='none';
+}
+function selMacMealType(t){
+  _macManualType=t;
+  document.querySelectorAll('.mac-type-pill').forEach(function(b){
+    b.classList.toggle('on',b.textContent===t);
+  });
+}
+function addManualMeal(){
+  var nameInp=document.getElementById('macAddName');
+  var ingrInp=document.getElementById('macAddIngr');
+  var btn=document.getElementById('macAddSubmit');
+  if(!nameInp)return;
+  var name=nameInp.value.trim();
+  if(!name)return;
+  var ingr=ingrInp?ingrInp.value.trim():'';
+  var fullDesc=_macManualType+': '+name+(ingr?'. Ingredients: '+ingr:'');
+  var displayName=_macManualType+': '+name;
+  if(btn){btn.textContent='Estimating…';btn.disabled=true;}
+  estimateMacros(fullDesc,function(est){
+    if(btn){btn.textContent='Add';btn.disabled=false;}
+    if(!est){if(btn)btn.textContent='Failed — try again';return;}
+    var dk=todayKey();
+    var day=getMacroDay(dk);
+    day.meals.push({name:displayName,cal:est.cal,protein:est.protein,carbs:est.carbs,fat:est.fat});
+    day.totals.cal    +=est.cal;
+    day.totals.protein+=est.protein;
+    day.totals.carbs  +=est.carbs;
+    day.totals.fat    +=est.fat;
+    localStorage.setItem('ac_macros',JSON.stringify(macros));
+    save();
+    renderMacroToday();
+    var addRow=document.getElementById('macAddRow');
+    if(addRow)showSavedFlash(addRow,'✓ Added');
+  });
 }
 
 // ── Week tab ───────────────────────────────────────────────────────────────
 function renderMacroWeek(){
   var days=last7Days();
   var tgt=calcMacros();
-  var maxCal=tgt.cal*1.2||2000;
-
-  // canvas bar chart
   var chartId='macWeekCanvas';
-  var rowsHtml='<canvas id="'+chartId+'" style="width:100%;height:110px;display:block;margin-bottom:16px"></canvas>';
 
-  // day rows
+  // Day rows
+  var rowsHtml='<canvas id="'+chartId+'" style="width:100%;height:170px;display:block;margin-bottom:16px"></canvas>';
   rowsHtml+=days.map(function(day){
     var d=macros[day.dk]||{totals:{cal:0,protein:0}};
     var tot=d.totals||{cal:0,protein:0};
-    var pct=maxCal?Math.round(tot.cal/tgt.cal*100):0;
-    var dk=day.dk;
-    var isToday=(dk===todayKey());
+    var pct=tgt.cal?Math.round(tot.cal/tgt.cal*100):0;
+    var isToday=(day.dk===todayKey());
+    var barCol=tot.cal>=tgt.cal?'#7a9e87':'#d4a853';
     return '<div class="mac-week-row'+(isToday?' today':'')+'">'
-      +'<div class="mac-week-date">'+day.label+'<span>'+(isToday?'Today':dk.slice(5).replace('-','/'+''))+'</span></div>'
-      +'<div class="mac-week-bars"><div style="height:4px;border-radius:2px;background:var(--brd);overflow:hidden"><div style="height:100%;width:'+Math.min(pct,100)+'%;background:'+macroRingColor(tot.cal/tgt.cal||0)+';border-radius:2px"></div></div></div>'
+      +'<div class="mac-week-date">'+day.label+'<span>'+(isToday?'Today':day.dk.slice(5).replace('-','/'))+'</span></div>'
+      +'<div class="mac-week-bars"><div style="height:4px;border-radius:2px;background:var(--b);overflow:hidden"><div style="height:100%;width:'+Math.min(pct,100)+'%;background:'+barCol+';border-radius:2px"></div></div></div>'
       +'<div class="mac-week-right"><div class="mac-week-kcal">'+tot.cal+'</div><div class="mac-week-prot">P '+tot.protein+'g</div></div>'
       +'</div>';
   }).join('');
 
   document.getElementById('macSec-week').innerHTML=rowsHtml;
 
-  // draw canvas chart
   requestAnimationFrame(function(){
     var canvas=document.getElementById(chartId);
     if(!canvas)return;
-    var W=canvas.parentElement.offsetWidth||300,H=110;
+    var W=canvas.parentElement.offsetWidth||300,H=170;
     canvas.width=W*window.devicePixelRatio;canvas.height=H*window.devicePixelRatio;
     canvas.style.width=W+'px';canvas.style.height=H+'px';
     var ctx=canvas.getContext('2d');ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
-    var padB=20,padT=8,barW=Math.floor((W-16)/7)-4,gap=4;
-    var startX=8;
+
+    var padL=34,padR=46,padT=6,padB=18;
+    var iW=W-padL-padR,iH=H-padT-padB;
+    var yMax=3000,yMin=0;
+    var yP=function(cal){return padT+iH*(1-(cal-yMin)/(yMax-yMin));};
+
     ctx.clearRect(0,0,W,H);
-    // target line
-    var ty=padT+(H-padT-padB)*(1-1); // at 100%
-    // draw bars
+
+    var gridCol=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
+    var gridMinorCol=dark?'rgba(255,255,255,.03)':'rgba(0,0,0,.03)';
+    var txtCol=dark?'rgba(255,255,255,.28)':'rgba(0,0,0,.28)';
+
+    // Minor grid lines at 250 intervals
+    ctx.strokeStyle=gridMinorCol;ctx.lineWidth=1;ctx.setLineDash([]);
+    for(var c=250;c<3000;c+=500){
+      var y=yP(c);
+      ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+    }
+    // Major grid lines + Y labels at 500 intervals
+    ctx.strokeStyle=gridCol;
+    ctx.font='9px sans-serif';ctx.fillStyle=txtCol;
+    for(var c=0;c<=3000;c+=500){
+      var y=yP(c);
+      ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+      ctx.textAlign='right';
+      var lbl=c===0?'0':c>=1000?(c/1000)+'k':String(c);
+      ctx.fillText(lbl,padL-4,y+3);
+    }
+
+    // Bars
+    var barCount=7;
+    var barStep=iW/barCount;
+    var barW=Math.floor(barStep*0.55);
+
     days.forEach(function(day,i){
       var d=macros[day.dk]||{totals:{cal:0}};
-      var tot=(d.totals||{cal:0});
-      var pct=Math.min(tot.cal/tgt.cal,1.2)||0;
-      var bh=Math.max(2,Math.round(pct*(H-padT-padB)));
-      var x=startX+i*(barW+gap);
-      var y=H-padB-bh;
-      var col=macroRingColor(tot.cal/tgt.cal||0);
+      var cal=(d.totals||{}).cal||0;
+      var clampedCal=Math.min(cal,yMax);
+      var bh=Math.max(clampedCal>0?2:0,Math.round((clampedCal-yMin)/(yMax-yMin)*iH));
+      if(!bh)return;
+      var x=padL+i*barStep+(barStep-barW)/2;
+      var y=yP(clampedCal);
+      var col=cal>=tgt.cal?'#7a9e87':'#d4a853';
       ctx.fillStyle=col;
       if(ctx.roundRect)ctx.roundRect(x,y,barW,bh,2);
       else ctx.rect(x,y,barW,bh);
       ctx.fill();
-      // label
-      ctx.fillStyle=dark?'rgba(255,255,255,.35)':'rgba(0,0,0,.35)';
-      ctx.font='9px sans-serif';ctx.textAlign='center';
-      ctx.fillText(day.label,x+barW/2,H-5);
     });
-    // target dashed line at tgt.cal height
-    var lineY=H-padB;
-    ctx.setLineDash([3,3]);
-    ctx.strokeStyle=dark?'rgba(255,255,255,.15)':'rgba(0,0,0,.12)';
-    ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(8,lineY);ctx.lineTo(W-8,lineY);ctx.stroke();
+
+    // Day labels
+    ctx.fillStyle=dark?'rgba(255,255,255,.35)':'rgba(0,0,0,.35)';
+    ctx.font='9px sans-serif';
+    days.forEach(function(day,i){
+      var x=padL+i*barStep+barStep/2;
+      ctx.textAlign='center';
+      ctx.fillText(day.label,x,H-4);
+    });
+
+    // Target dotted line
+    var ty=yP(tgt.cal);
+    ctx.setLineDash([4,3]);
+    ctx.strokeStyle='rgba(212,168,83,.6)';
+    ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(padL,ty);ctx.lineTo(W-padR,ty);ctx.stroke();
     ctx.setLineDash([]);
+    // Target label
+    ctx.fillStyle='#d4a853';
+    ctx.font='bold 9px sans-serif';ctx.textAlign='left';
+    ctx.fillText('target',W-padR+4,ty+3);
   });
 }
 
@@ -226,8 +326,6 @@ function renderMacroWeek(){
 function renderMacroInsights(){
   var days=last7Days();
   var tgt=calcMacros();
-
-  // calc stats
   var logged=days.filter(function(d){return macros[d.dk]&&macros[d.dk].totals&&macros[d.dk].totals.cal>0;});
   var avgCal=logged.length?Math.round(logged.reduce(function(s,d){return s+(macros[d.dk].totals.cal||0);},0)/logged.length):0;
   var avgProt=logged.length?Math.round(logged.reduce(function(s,d){return s+(macros[d.dk].totals.protein||0);},0)/logged.length):0;
@@ -243,23 +341,21 @@ function renderMacroInsights(){
   }
 
   var calDiff=avgCal-tgt.cal;
-  var calNudge=avgCal===0?'Check off meals in the Protocol tab to start tracking.'
+  var calNudge=avgCal===0?'Check off meals in Protocol to start tracking.'
     :calDiff>200?'Running a surplus — consider reducing evening snacks.'
     :calDiff<-200?'Running a deficit — fuel your training with quality carbs.'
     :'On target. Keep it up.';
-
   var protNudge=avgProt===0?'Protein tracking begins when you log meals.'
     :avgProt<tgt.protein*0.8?'Protein is low. Add a shake or Greek yogurt post-workout.'
     :avgProt>tgt.protein*1.2?'Protein is high — ensure adequate hydration.'
     :'Protein intake is solid.';
-
   var conNudge=consistencyPct===0?'Log your first meal today.'
     :consistencyPct<50?'Sporadic logging. Aim to check meals daily in Protocol.'
     :consistencyPct<80?'Good effort. Push for 7-day streaks.'
     :'Excellent consistency.';
 
   document.getElementById('macSec-insights').innerHTML=
-    card('Avg Daily Calories',avgCal?avgCal+' kcal':' — ',avgCal?'target '+tgt.cal:'no data',calNudge)
-    +card('Avg Daily Protein',avgProt?avgProt+'g':' — ',avgProt?'target '+tgt.protein+'g':'no data',protNudge)
+    card('Avg Daily Calories',avgCal?avgCal+' kcal':'—',avgCal?'· target '+tgt.cal:'no data',calNudge)
+    +card('Avg Daily Protein',avgProt?avgProt+'g':'—',avgProt?'· target '+tgt.protein+'g':'no data',protNudge)
     +card('7-Day Consistency',consistencyPct+'%',onTarget+'/'+days.length+' on target',conNudge);
 }

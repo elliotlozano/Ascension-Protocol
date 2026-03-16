@@ -302,10 +302,25 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .mac-week-kcal{font-size:13px;font-weight:700;color:var(--t)}
 .mac-week-prot{font-size:10px;color:var(--mu);font-weight:500}
 .insight-card{background:var(--s2);border:1px solid var(--a);border-radius:14px;padding:16px;margin-bottom:10px}
-.insight-title{font-size:11px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.insight-title{font-size:11px;font-weight:600;color:#d4a853;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
 .insight-stat{font-size:28px;font-weight:800;color:var(--t);line-height:1.1;margin-bottom:2px}
-.insight-pct{font-size:14px;font-weight:500;color:var(--mu);margin-left:6px}
-.insight-nudge{font-size:12px;color:var(--mu);margin-top:6px;line-height:1.4}
+.insight-pct{font-size:13px;font-weight:500;color:var(--mu);margin-left:4px}
+.insight-nudge{font-size:13px;color:var(--t);margin-top:6px;line-height:1.5}
+
+/* ── Manual meal entry ── */
+.mac-empty{text-align:center;color:var(--mu);padding:20px 0;font-size:14px;line-height:1.5}
+.mac-add-row{display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;border-top:1px solid var(--b);margin-top:4px}
+.mac-add-plus{width:26px;height:26px;border-radius:50%;background:var(--a);color:#1c1c1e;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
+.mac-add-label{font-size:14px;color:var(--mu);font-weight:500}
+.mac-add-form{padding:12px 0 4px;border-top:1px solid var(--b)}
+.mac-add-inp{width:100%;background:var(--s2);border:1.5px solid var(--b2);border-radius:9px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;transition:border-color var(--tr);margin-bottom:8px;font-family:var(--fb);-webkit-appearance:none;appearance:none}
+.mac-add-inp:focus{border-color:var(--a)}
+.mac-type-pills{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.mac-type-pill{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;background:var(--s2);color:var(--mu);border:1px solid var(--b);transition:all var(--tr)}
+.mac-type-pill.on{background:var(--a);color:#1c1c1e;border-color:var(--a)}
+.mac-add-submit{width:100%;padding:12px;background:var(--a);color:#1c1c1e;border-radius:10px;font-size:15px;font-weight:700}
+.mac-add-submit:disabled{opacity:.5}
+.mac-cancel-btn{color:var(--mu);font-size:13px;font-weight:500}
 
 /* ── Biometrics card (main metrics view) ── */
 .bio-hdr-tap{display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:10px}

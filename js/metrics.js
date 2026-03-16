@@ -119,7 +119,7 @@ function renderBioTab(t){
     +histHtml;
 
   requestAnimationFrame(function(){
-    drawBioGraph(canvasId,hist);
+    drawBioGraph(canvasId,hist,t);
   });
 
   hist.slice(0,20).forEach(function(_,idx){
@@ -241,7 +241,8 @@ function attachBioSwipe(t,idx){
 
 // ── Graph ──────────────────────────────────────────────────────────────────
 
-function drawBioGraph(canvasId,hist){
+// type: 'weight' uses fixed 140–170 Y axis with ticks; 'bodyfat' auto-scales
+function drawBioGraph(canvasId,hist,type){
   var canvas=document.getElementById(canvasId);
   var empty=document.getElementById(canvasId+'Empty');
   if(!canvas)return;
@@ -252,31 +253,83 @@ function drawBioGraph(canvasId,hist){
   }
   canvas.style.display='block';
   if(empty)empty.style.display='none';
-  var W=canvas.parentElement.offsetWidth||300,H=120;
-  canvas.width=W*window.devicePixelRatio;canvas.height=H*window.devicePixelRatio;canvas.style.width=W+'px';canvas.style.height=H+'px';
+
+  var isWeight=(type==='weight');
+  var H=isWeight?140:120;
+  var W=canvas.parentElement.offsetWidth||300;
+  canvas.width=W*window.devicePixelRatio;canvas.height=H*window.devicePixelRatio;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
   var ctx=canvas.getContext('2d');ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
-  var pts=hist.slice().reverse(),vals=pts.map(function(p){return parseFloat(p.v);}).filter(function(v){return!isNaN(v);});
+
+  var pts=hist.slice().reverse();
+  var vals=pts.map(function(p){return parseFloat(p.v);}).filter(function(v){return!isNaN(v);});
   if(vals.length<2){canvas.style.display='none';if(empty)empty.style.display='block';return;}
-  var minV=Math.min.apply(null,vals)-2,maxV=Math.max.apply(null,vals)+2,range=maxV-minV||1;
-  var pad={l:8,r:8,t:10,b:24},iW=W-pad.l-pad.r,iH=H-pad.t-pad.b;
-  var xP=function(i){return pad.l+i*(iW/(vals.length-1));};
-  var yP=function(v){return pad.t+iH*(1-(v-minV)/range);};
+
+  var minV,maxV,range;
+  if(isWeight){minV=140;maxV=170;range=30;}
+  else{minV=Math.min.apply(null,vals)-2;maxV=Math.max.apply(null,vals)+2;range=maxV-minV||1;}
+
+  var padL=isWeight?28:8,padR=8,padT=10,padB=24;
+  var iW=W-padL-padR,iH=H-padT-padB;
+  var xP=function(i){return padL+i*(iW/(vals.length-1));};
+  var yP=function(v){return padT+iH*(1-(v-minV)/range);};
+
   ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';ctx.lineWidth=1;
-  for(var g=0;g<4;g++){var gy=pad.t+(iH/3)*g;ctx.beginPath();ctx.moveTo(pad.l,gy);ctx.lineTo(W-pad.r,gy);ctx.stroke();}
-  var grad=ctx.createLinearGradient(0,pad.t,0,H);grad.addColorStop(0,'rgba(212,168,83,.3)');grad.addColorStop(1,'rgba(212,168,83,.02)');
-  ctx.beginPath();ctx.moveTo(xP(0),yP(vals[0]));for(var i=1;i<vals.length;i++)ctx.lineTo(xP(i),yP(vals[i]));
-  ctx.lineTo(xP(vals.length-1),H-pad.b);ctx.lineTo(xP(0),H-pad.b);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
-  ctx.beginPath();ctx.moveTo(xP(0),yP(vals[0]));for(var i=1;i<vals.length;i++)ctx.lineTo(xP(i),yP(vals[i]));
+
+  var gridCol=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
+  var txtCol=dark?'rgba(255,255,255,.3)':'rgba(0,0,0,.3)';
+
+  if(isWeight){
+    // Minor tick marks every 1 lb (short, no label)
+    ctx.strokeStyle=dark?'rgba(255,255,255,.04)':'rgba(0,0,0,.04)';ctx.lineWidth=1;
+    for(var lb=140;lb<=170;lb++){
+      if(lb%5===0)continue; // skip major tick positions
+      var ly=yP(lb);
+      ctx.beginPath();ctx.moveTo(padL,ly);ctx.lineTo(W-padR,ly);ctx.stroke();
+    }
+    // Major ticks every 5 lbs — labeled, with grid line
+    ctx.strokeStyle=gridCol;ctx.lineWidth=1;
+    ctx.font='9px sans-serif';ctx.fillStyle=txtCol;
+    for(var lb=140;lb<=170;lb+=5){
+      var ly=yP(lb);
+      ctx.beginPath();ctx.moveTo(padL,ly);ctx.lineTo(W-padR,ly);ctx.stroke();
+      ctx.textAlign='right';ctx.fillText(String(lb),padL-4,ly+3);
+    }
+  } else {
+    // Auto-scale: 4 evenly-spaced grid lines
+    ctx.strokeStyle=gridCol;ctx.lineWidth=1;
+    for(var g=0;g<4;g++){var gy=padT+(iH/3)*g;ctx.beginPath();ctx.moveTo(padL,gy);ctx.lineTo(W-padR,gy);ctx.stroke();}
+  }
+
+  // Fill gradient
+  var grad=ctx.createLinearGradient(0,padT,0,H);
+  grad.addColorStop(0,'rgba(212,168,83,.3)');grad.addColorStop(1,'rgba(212,168,83,.02)');
+  ctx.beginPath();ctx.moveTo(xP(0),yP(vals[0]));
+  for(var i=1;i<vals.length;i++)ctx.lineTo(xP(i),yP(vals[i]));
+  ctx.lineTo(xP(vals.length-1),H-padB);ctx.lineTo(xP(0),H-padB);
+  ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+
+  // Line
+  ctx.beginPath();ctx.moveTo(xP(0),yP(vals[0]));
+  for(var i=1;i<vals.length;i++)ctx.lineTo(xP(i),yP(vals[i]));
   ctx.strokeStyle='#d4a853';ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
-  vals.forEach(function(v,i){ctx.beginPath();ctx.arc(xP(i),yP(v),3,0,Math.PI*2);ctx.fillStyle='#d4a853';ctx.fill();if(i===0||i===vals.length-1||vals.length<=6){ctx.fillStyle=dark?'rgba(255,255,255,.5)':'rgba(0,0,0,.4)';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText(v,xP(i),yP(v)-7);}});
-  ctx.fillStyle=dark?'rgba(255,255,255,.3)':'rgba(0,0,0,.3)';ctx.font='9px sans-serif';
-  if(pts.length){ctx.textAlign='left';ctx.fillText(pts[0].d,pad.l,H-6);}
-  if(pts.length>1){ctx.textAlign='right';ctx.fillText(pts[pts.length-1].d,W-pad.r,H-6);}
+
+  // Dots + value labels
+  vals.forEach(function(v,i){
+    ctx.beginPath();ctx.arc(xP(i),yP(v),3,0,Math.PI*2);ctx.fillStyle='#d4a853';ctx.fill();
+    if(i===0||i===vals.length-1||vals.length<=6){
+      ctx.fillStyle=dark?'rgba(255,255,255,.5)':'rgba(0,0,0,.4)';
+      ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText(v,xP(i),yP(v)-7);
+    }
+  });
+
+  // Date labels
+  ctx.fillStyle=txtCol;ctx.font='9px sans-serif';
+  if(pts.length){ctx.textAlign='left';ctx.fillText(pts[0].d,padL,H-6);}
+  if(pts.length>1){ctx.textAlign='right';ctx.fillText(pts[pts.length-1].d,W-padR,H-6);}
 }
 
-// Kept for backward compat (Realtime sync calls renderMetrics, not this directly)
 function drawWeightGraph(){
   var c=document.getElementById('wtCanvas');
-  if(c)drawBioGraph('wtCanvas',bio.wtHist||[]);
+  if(c)drawBioGraph('wtCanvas',bio.wtHist||[],'weight');
 }
