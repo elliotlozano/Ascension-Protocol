@@ -136,14 +136,9 @@
     <div class="hdr"><div class="hdr-in"><div><div class="ttl">Metrics</div></div></div></div>
     <div class="scroll">
       <div class="macro-card" id="macroCard"></div>
-      <div class="bio-card">
-        <div class="bio-hdr"><div class="ct" style="margin-bottom:0">Biometrics</div><button class="edit-btn" id="bioBtn" onclick="toggleBioEdit()">✎</button></div>
-        <div class="bio-grid" id="bioGrid"></div>
-        <div class="bio-inputs" id="bioInputs"></div>
-      </div>
+      <div class="bio-card" id="bioCard"></div>
       <div class="card"><div class="ct">Lift PRs</div><div id="liftPRs"></div></div>
       <div class="card"><div class="ct">Run PRs</div><div id="runPRs"></div></div>
-      <div class="card"><div class="ct">Weight History</div><div class="wg-wrap"><canvas id="wtCanvas"></canvas></div><div id="wtEmpty" style="display:none;font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:20px 0">Log your weight above to see your trend.</div></div>
     </div>
   </div>
 
@@ -159,6 +154,19 @@
       <div id="macSec-today"></div>
       <div id="macSec-week"     style="display:none"></div>
       <div id="macSec-insights" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="mtr-page" id="pageBiometrics">
+    <div class="hdr"><div class="hdr-in"><div><div class="ttl">Biometrics</div></div></div></div>
+    <div class="scroll">
+      <button class="back-btn" onclick="closeBioPage()">‹ Back</button>
+      <div class="bio-tabs">
+        <button class="bio-tab on" id="bioTab-weight"  onclick="selBioTab('weight')">Weight</button>
+        <button class="bio-tab"    id="bioTab-bodyfat" onclick="selBioTab('bodyfat')">Body Fat</button>
+      </div>
+      <div id="bioSec-weight"></div>
+      <div id="bioSec-bodyfat" style="display:none"></div>
     </div>
   </div>
 </div>

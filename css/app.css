@@ -281,18 +281,18 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .mac-bars{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
 .mac-bar-row{display:flex;align-items:center;gap:8px}
 .mac-bar-label{width:56px;font-size:12px;font-weight:600;color:var(--mu);text-transform:capitalize}
-.mac-bar-track{flex:1;height:6px;border-radius:3px;background:var(--brd);overflow:hidden}
+.mac-bar-track{flex:1;height:6px;border-radius:3px;background:var(--b);overflow:hidden}
 .mac-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
 .mac-bar-val{width:64px;text-align:right;font-size:12px;font-weight:700;color:var(--t)}
 .mac-bar-val span{font-weight:400;color:var(--mu)}
 .mac-meals-list{display:flex;flex-direction:column;gap:1px}
-.mac-meal-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--brd)}
+.mac-meal-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--b)}
 .mac-meal-row:last-child{border-bottom:none}
 .mac-meal-name{flex:1;font-size:13px;font-weight:500;color:var(--t)}
 .mac-meal-chips{display:flex;gap:5px;flex-shrink:0}
 .mac-chip{font-size:11px;font-weight:600;color:var(--mu)}
 .mac-meal-cal{font-size:12px;font-weight:700;color:var(--mu);width:52px;text-align:right;flex-shrink:0}
-.mac-week-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--brd)}
+.mac-week-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)}
 .mac-week-row:last-child{border-bottom:none}
 .mac-week-row.today .mac-week-date{color:var(--a)}
 .mac-week-date{font-size:13px;font-weight:700;color:var(--t);width:36px;flex-shrink:0}
@@ -306,3 +306,37 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .insight-stat{font-size:28px;font-weight:800;color:var(--t);line-height:1.1;margin-bottom:2px}
 .insight-pct{font-size:14px;font-weight:500;color:var(--mu);margin-left:6px}
 .insight-nudge{font-size:12px;color:var(--mu);margin-top:6px;line-height:1.4}
+
+/* ── Biometrics card (main metrics view) ── */
+.bio-hdr-tap{display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:10px}
+.bio-sum-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--b)}
+.bio-sum-row:last-child{border-bottom:none}
+.bio-sum-l{font-size:13px;font-weight:500;color:var(--t2)}
+.bio-sum-r{font-size:13px;font-weight:600;color:var(--t)}
+
+/* ── Biometrics sub-page ── */
+.bio-tabs{display:flex;gap:6px;padding:0 0 14px;flex-shrink:0}
+.bio-tab{flex:1;padding:8px 0;border-radius:10px;font-size:13px;font-weight:600;background:var(--s2);color:var(--mu);border:1px solid var(--b);transition:all var(--tr)}
+.bio-tab.on{background:var(--a);color:#1c1c1e;border-color:var(--a)}
+/* Hero stat */
+.bio-hero{text-align:center;padding:20px 0 8px;cursor:pointer;user-select:none}
+.bio-hero-val{font-family:var(--fd);font-size:72px;font-weight:600;color:var(--t);line-height:1}
+.bio-hero-unit{font-size:14px;font-weight:500;color:var(--mu);margin-top:4px}
+.bio-delta{font-size:13px;font-weight:500;text-align:center;margin-bottom:16px;min-height:20px}
+/* Inline edit */
+.bio-hero-edit-row{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 0 8px}
+.bio-hero-inp{background:var(--s2);border:2px solid var(--a);border-radius:12px;padding:10px 16px;color:var(--t);font-family:var(--fd);font-size:42px;font-weight:600;width:160px;text-align:center;outline:none;-webkit-appearance:none;appearance:none}
+.bio-hero-edit-unit{font-size:18px;font-weight:500;color:var(--mu)}
+.bio-hero-save{font-size:16px;font-weight:700;padding:10px 16px;background:var(--a);color:#1c1c1e;border-radius:10px}
+/* Graph */
+.bio-graph-wrap{position:relative;margin:0 0 16px;min-height:40px}
+.bio-graph-empty{font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:20px 0;display:none}
+/* History list */
+.bio-hist-list{display:flex;flex-direction:column}
+.bio-hist-item{position:relative;overflow:hidden}
+.bio-hist-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--b);background:var(--bg);position:relative;z-index:1}
+.bio-hist-item:last-child .bio-hist-row{border-bottom:none}
+.bio-hist-val{font-size:15px;font-weight:600;color:var(--t)}
+.bio-hist-date{font-size:13px;color:var(--mu);font-weight:500}
+.bio-del-btn{position:absolute;right:0;top:0;bottom:0;width:80px;background:#c0504a;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;z-index:0}
+.bio-hist-empty{font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:28px 0;line-height:1.6}

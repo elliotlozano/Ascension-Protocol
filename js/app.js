@@ -1,5 +1,15 @@
 'use strict';
 
+// ── Utility: saved flash ──────────────────────────────────────
+function showSavedFlash(el){
+  var f=document.createElement('div');
+  f.textContent='✓ Saved';
+  f.style.cssText='color:#7a9e87;font-size:12px;font-weight:700;margin-top:6px;opacity:1;transition:opacity .4s ease;text-align:center';
+  el.parentNode.insertBefore(f,el.nextSibling);
+  setTimeout(function(){f.style.opacity='0';},1100);
+  setTimeout(function(){if(f.parentNode)f.parentNode.removeChild(f);},1500);
+}
+
 // ── Tab management with sessionStorage persistence (feature 6) ─
 function selTab(t){
   ['P','R','M','A'].forEach(function(x){
