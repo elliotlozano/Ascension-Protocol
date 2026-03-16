@@ -79,10 +79,10 @@ function renderBioTab(t){
     var diff=parseFloat(hist[0].v)-parseFloat(hist[1].v);
     if(!isNaN(diff)&&diff!==0){
       var sign=diff>0?'+':'−';
-      var col=diff>0?'var(--a)':'#7a9e87';
+      var col=diff>0?'#7a9e87':'var(--a)';
       deltaHtml='<div class="bio-delta" style="color:'+col+'">'+sign+Math.abs(diff).toFixed(1)+' '+unit+' since last entry</div>';
     } else {
-      deltaHtml='<div class="bio-delta" style="color:var(--mu)">No change since last entry</div>';
+      deltaHtml='<div class="bio-delta" style="color:var(--a)">No change since last entry</div>';
     }
   } else if(hist.length===1){
     deltaHtml='<div class="bio-delta" style="color:var(--mu)">First entry</div>';
