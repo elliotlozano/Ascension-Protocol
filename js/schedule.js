@@ -10,19 +10,30 @@ function getMeta(protoMonth) {
   return b;
 }
 function getBreakfast(gWeek, d) {
-  return ovr['bf.'+gWeek+'.'+d] || BF[((gWeek-1)*7 + DAYS.indexOf(d)) % 16];
+  var pm=Math.floor((gWeek-1)/4)+1, wk=((gWeek-1)%4)+1;
+  var ds=getDateStringForDay(pm,wk,d);
+  return ovr['bf.actual.'+ds] || ovr['bf.'+gWeek+'.'+d] || BF[((gWeek-1)*7+DAYS.indexOf(d))%16];
 }
 function getDinner(gWeek, d) {
   var idx={Monday:0,Tuesday:1,Wednesday:2,Thursday:3};
   if(!(d in idx))return null;
   var i=(gWeek-1)*4+idx[d];
-  return ovr['din.'+(i%16)] || BD[i%16];
+  var pm=Math.floor((gWeek-1)/4)+1, wk=((gWeek-1)%4)+1;
+  var ds=getDateStringForDay(pm,wk,d);
+  return ovr['din.actual.'+ds] || ovr['din.'+(i%16)] || BD[i%16];
 }
 function getLunch(gWeek, d) {
   var prev={Tuesday:'Monday',Wednesday:'Tuesday',Thursday:'Wednesday',Friday:'Thursday'};
-  return prev[d] ? getDinner(gWeek, prev[d]) : null;
+  if(!prev[d])return null;
+  var pm=Math.floor((gWeek-1)/4)+1, wk=((gWeek-1)%4)+1;
+  var ds=getDateStringForDay(pm,wk,d);
+  if(ovr['lunch.actual.'+ds])return ovr['lunch.actual.'+ds];
+  return getDinner(gWeek,prev[d]);
 }
 function getSnack(gWeek, d) {
+  var pm=Math.floor((gWeek-1)/4)+1, wk=((gWeek-1)%4)+1;
+  var ds=getDateStringForDay(pm,wk,d);
+  if(ovr['sn.actual.'+ds])return ovr['sn.actual.'+ds];
   if(ovr['sn.'+gWeek+'.'+d])return ovr['sn.'+gWeek+'.'+d];
   var i=DAYS.indexOf(d);
   return(i%2===0?SH:SC)[(i+(gWeek-1))%7];
