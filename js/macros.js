@@ -1,5 +1,7 @@
 'use strict';
 
+var _macroSwipedRow = null;
+
 // ── helpers ────────────────────────────────────────────────────────────────
 function todayKey(){
   var d=new Date();
@@ -103,6 +105,7 @@ function selMacroTab(t){
 var _macManualType='Breakfast';
 
 function renderMacroToday(){
+  _macroSwipedRow=null;
   var dk=todayKey();
   var day=getMacroDay(dk);
   var tgt=calcMacros();
@@ -136,8 +139,10 @@ function renderMacroToday(){
 
   // Meals list
   var mealsHtml=day.meals.length
-    ? day.meals.map(function(m){
-        return '<div class="mac-meal-row">'
+    ? day.meals.map(function(m,mi){
+        return '<div class="mac-meal-wrap">'
+          +'<button class="mac-del-reveal-btn" onclick="deleteMacroMeal('+mi+')">Delete</button>'
+          +'<div class="mac-meal-row" id="macMealRow-'+mi+'">'
           +'<div class="mac-meal-name">'+escHtml(m.name)+'</div>'
           +'<div class="mac-meal-chips">'
           +'<span class="mac-chip" style="color:#6b8cae">P '+m.protein+'g</span>'
@@ -145,6 +150,8 @@ function renderMacroToday(){
           +'<span class="mac-chip" style="color:#a89530">F '+m.fat+'g</span>'
           +'</div>'
           +'<div class="mac-meal-cal">'+m.cal+' kcal</div>'
+          +'</div>'
+          +'<button class="hover-del-btn" onclick="deleteMacroMeal('+mi+')" tabindex="-1">×</button>'
           +'</div>';
       }).join('')
     : '<div class="mac-empty">Check off meals in Protocol or add one manually below.</div>';
@@ -173,6 +180,7 @@ function renderMacroToday(){
     +'<div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin:16px 0 8px">Today\'s Meals</div>'
     +'<div class="mac-meals-list">'+mealsHtml+'</div>'
     +addHtml;
+  day.meals.forEach(function(_,mi){attachMacroSwipe(mi);});
 }
 
 function toggleMacManual(){
@@ -321,6 +329,53 @@ function renderMacroWeek(){
     ctx.font='bold 9px sans-serif';ctx.textAlign='left';
     ctx.fillText('target',W-padR+4,ty+3);
   });
+}
+
+// ── Macro meal delete & swipe ──────────────────────────────────────────────
+function deleteMacroMeal(idx){
+  _macroSwipedRow=null;
+  var dk=todayKey();
+  if(!macros[dk])return;
+  var day=macros[dk];
+  day.meals.splice(idx,1);
+  day.totals={cal:0,protein:0,carbs:0,fat:0};
+  day.meals.forEach(function(m){['cal','protein','carbs','fat'].forEach(function(k){day.totals[k]+=(m[k]||0);});});
+  localStorage.setItem('ac_macros',JSON.stringify(macros));
+  save();
+  renderMacroToday();
+}
+function attachMacroSwipe(idx){
+  var row=document.getElementById('macMealRow-'+idx);
+  if(!row)return;
+  var startX,startY,tracking=false,wasOpen=false;
+  row.addEventListener('touchstart',function(e){
+    if(_macroSwipedRow&&_macroSwipedRow!==row){
+      _macroSwipedRow.style.transition='transform .2s ease';
+      _macroSwipedRow.style.transform='';
+      var sr=_macroSwipedRow;
+      setTimeout(function(){sr.style.transition='';},220);
+      _macroSwipedRow=null;
+    }
+    wasOpen=(_macroSwipedRow===row);
+    startX=e.touches[0].clientX;startY=e.touches[0].clientY;tracking=false;
+  },{passive:true});
+  row.addEventListener('touchmove',function(e){
+    var dx=e.touches[0].clientX-startX;
+    var dy=Math.abs(e.touches[0].clientY-startY);
+    if(!tracking&&(Math.abs(dx)>6||dy>6)){tracking=Math.abs(dx)>dy;}
+    if(!tracking)return;
+    var base=wasOpen?-80:0;
+    row.style.transform='translateX('+Math.max(-80,Math.min(0,base+dx))+'px)';
+  },{passive:true});
+  row.addEventListener('touchend',function(e){
+    if(!tracking)return;
+    var dx=e.changedTouches[0].clientX-startX;
+    var finalX=(wasOpen?-80:0)+dx;
+    row.style.transition='transform .2s ease';
+    if(finalX<-40){row.style.transform='translateX(-80px)';_macroSwipedRow=row;}
+    else{row.style.transform='';if(_macroSwipedRow===row)_macroSwipedRow=null;}
+    setTimeout(function(){row.style.transition='';},220);
+  },{passive:true});
 }
 
 // ── Insights tab ───────────────────────────────────────────────────────────

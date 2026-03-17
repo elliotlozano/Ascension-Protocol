@@ -100,6 +100,7 @@ function renderBioTab(t){
         +'<span class="bio-hist-val">'+escHtml(entry.v)+' '+unit+'</span>'
         +'<span class="bio-hist-date">'+escHtml(entry.d)+'</span>'
         +'</div>'
+        +'<button class="hover-del-btn" onclick="deleteBioEntry(\''+t+'\','+idx+')" tabindex="-1">×</button>'
         +'</div>';
     });
   } else {

@@ -302,11 +302,12 @@ function generateGroceryList(tw,cb){
   ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var s=getDinner(tw,d);if(s)meals.push('Dinner '+d+': '+s);});
   DAYS.forEach(function(d){var s=getBreakfast(tw,d);if(s)meals.push('Breakfast '+d+': '+s);});
   DAYS.forEach(function(d){var s=getSnack(tw,d);if(s)meals.push('Snack '+d+': '+s);});
-  var prompt='These are all the meals for the week:\n'+meals.join('\n')+'\n\nCreate a complete grocery list. Include every ingredient needed for every meal listed. Deduplicate so no item appears in more than one section. Assign each ingredient to the correct section based on what it is.\n\nReply with ONLY a JSON object, no markdown, no explanation:\n{"protein":[],"produce":[],"grains":[],"dairy":[],"snacks":[]}';
+  console.log('Grocery meals for week '+tw+':', meals);
+  var prompt='These are the meals for the week:\n'+meals.join('\n')+'\n\nGo through each meal one by one and extract every food item and ingredient mentioned. Include ALL of them — do not omit any ingredient. For example: if a meal mentions bison, bison must appear in protein. If a meal includes eggs, eggs must appear in protein. If a meal mentions granola, granola must appear in grains. If a meal mentions everything bagel seasoning, it must appear in snacks. Nothing from the meal strings should be omitted.\n\nAssign each ingredient to exactly one section:\n- protein: all meats, poultry, fish, seafood, eggs (when a main meal ingredient)\n- produce: all fruits and vegetables\n- grains: bread, oats, rice, pasta, granola, crackers, wraps, tortillas\n- dairy: milk, cheese, yogurt, cottage cheese, butter\n- snacks: nuts, seeds, seasonings, sauces, condiments, and anything that does not fit the above four\n\nDeduplicate across sections — no item in more than one section.\n\nReply with ONLY valid JSON, no markdown fences, no explanation:\n{"protein":[],"produce":[],"grains":[],"dairy":[],"snacks":[]}';
   fetch('https://theascensionprotocol.netlify.app/.netlify/functions/chat',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:'You are a meal planning assistant. Respond only with valid JSON.',messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:'You are a meal planning assistant. Extract every ingredient from every meal listed. Respond only with valid JSON.',messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();}).then(function(data){
     try{
       var txt=((data.content||[])[0]||{}).text||'';
@@ -318,7 +319,7 @@ function generateGroceryList(tw,cb){
         save();
         cb(null,gen);
       } else {cb(new Error('invalid'));}
-    }catch(e){cb(new Error('parse'));}
+    }catch(e){console.error('Grocery list parse error:',e);cb(new Error('parse'));}
   }).catch(function(){cb(new Error('network'));});
 }
 function _renderGroceryBody(gen){
@@ -341,7 +342,9 @@ function _renderGroceryBody(gen){
         +'<div class="gl-item" id="gli-'+sk+'">'
         +'<div class="gl-chk" onclick="toggleGrocery(\''+obj.key+'\')"></div>'
         +'<span class="gl-name" onclick="openGroceryInlineEdit(this,\''+cat+'\',\''+obj.type+'\','+obj.idx+')">'+escHtml(obj.item)+'</span>'
-        +'</div></div>';
+        +'</div>'
+        +'<button class="hover-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')" tabindex="-1">×</button>'
+        +'</div>';
     });
     if(checked.length){
       html+='<div class="gl-done-sep">';
@@ -352,7 +355,9 @@ function _renderGroceryBody(gen){
           +'<div class="gl-item" id="gli-'+sk+'">'
           +'<div class="gl-chk on" onclick="toggleGrocery(\''+obj.key+'\')">'+chkSvg+'</div>'
           +'<span class="gl-name done">'+escHtml(obj.item)+'</span>'
-          +'</div></div>';
+          +'</div>'
+          +'<button class="hover-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')" tabindex="-1">×</button>'
+          +'</div>';
       });
       html+='</div>';
     }

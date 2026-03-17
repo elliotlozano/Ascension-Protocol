@@ -277,6 +277,15 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .chat-send svg{width:16px;height:16px}
 .chat-hint{font-size:11px;color:var(--mu);text-align:center;margin-top:6px;font-weight:500}
 
+/* ── Hover delete button (pointer:fine / desktop) ── */
+.hover-del-btn{display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:6px;background:rgba(192,80,74,.12);color:#c0504a;font-size:18px;font-weight:400;line-height:1;border:none;cursor:pointer;align-items:center;justify-content:center;z-index:2;flex-shrink:0;transition:background .15s}
+.hover-del-btn:hover{background:rgba(192,80,74,.25)}
+@media (pointer:fine){
+  .gl-item-wrap:hover .hover-del-btn,
+  .bio-hist-item:hover .hover-del-btn,
+  .mac-meal-wrap:hover .hover-del-btn{display:flex}
+}
+
 /* ── Macro Tracker ── */
 .mtr-page{display:none;flex-direction:column;height:100%;overflow:hidden}
 .mtr-page.on{display:flex}
@@ -292,7 +301,9 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .mac-bar-val{width:64px;text-align:right;font-size:12px;font-weight:700;color:var(--t)}
 .mac-bar-val span{font-weight:400;color:var(--mu)}
 .mac-meals-list{display:flex;flex-direction:column;gap:1px}
-.mac-meal-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--b)}
+.mac-meal-wrap{position:relative;overflow:hidden}
+.mac-del-reveal-btn{position:absolute;right:0;top:0;bottom:0;width:80px;background:#c0504a;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:0}
+.mac-meal-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--b);background:var(--bg);position:relative;z-index:1;transition:transform .25s ease}
 .mac-meal-row:last-child{border-bottom:none}
 .mac-meal-name{flex:1;font-size:13px;font-weight:500;color:var(--t)}
 .mac-meal-chips{display:flex;gap:5px;flex-shrink:0}
