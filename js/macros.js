@@ -170,6 +170,7 @@ function renderMacroToday(){
 
   document.getElementById('macSec-today').innerHTML=svgRing
     +'<div class="mac-bars">'+bars+'</div>'
+    +'<div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin:16px 0 8px">Today\'s Meals</div>'
     +'<div class="mac-meals-list">'+mealsHtml+'</div>'
     +addHtml;
 }

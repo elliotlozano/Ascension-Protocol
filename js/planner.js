@@ -148,12 +148,39 @@ function selWeek(w){cW=w;renderPlanner();}
 function selDay(d){cD=d;renderPlanner();}
 function toggleTask(i){
   var k=ckKey(cD,i);chk[k]=!chk[k];
-  if(chk[k]){
-    var ts=buildSchedule(cD,cProtoMonth,globalWeek());
-    var t=ts[i];
-    if(t&&t.tag==='nutrition'){
-      var m=t.task.match(/^(Breakfast|Lunch|Dinner|Snack):\s*(.+)/i);
-      if(m)logMealMacro(t.task);
+  var ts=buildSchedule(cD,cProtoMonth,globalWeek());
+  var t=ts[i];
+  if(t&&t.tag==='nutrition'){
+    var dk=todayKey();
+    if(chk[k]){
+      // Checking on: log macro entry
+      if(t.task.toLowerCase().indexOf('water')!==-1){
+        // Water task: log with zero macros, no AI call
+        var wday=getMacroDay(dk);
+        var wAlready=false;
+        for(var wi=0;wi<wday.meals.length;wi++){if(wday.meals[wi].name.toLowerCase()===t.task.toLowerCase()){wAlready=true;break;}}
+        if(!wAlready){
+          wday.meals.push({name:t.task,cal:0,protein:0,carbs:0,fat:0});
+          localStorage.setItem('ac_macros',JSON.stringify(macros));
+        }
+        if(document.getElementById('pageMacros').classList.contains('on'))renderMacroToday();
+      } else {
+        logMealMacro(t.task);
+      }
+    } else {
+      // Unchecking: remove entry and recalculate totals
+      if(macros[dk]){
+        var mday=macros[dk];
+        var rmIdx=-1;
+        for(var mi=0;mi<mday.meals.length;mi++){if(mday.meals[mi].name.toLowerCase()===t.task.toLowerCase()){rmIdx=mi;break;}}
+        if(rmIdx!==-1){
+          mday.meals.splice(rmIdx,1);
+          mday.totals={cal:0,protein:0,carbs:0,fat:0};
+          mday.meals.forEach(function(m){['cal','protein','carbs','fat'].forEach(function(fk){mday.totals[fk]+=(m[fk]||0);});});
+          localStorage.setItem('ac_macros',JSON.stringify(macros));
+        }
+        if(document.getElementById('pageMacros').classList.contains('on'))renderMacroToday();
+      }
     }
   }
   save();renderPlanner();
