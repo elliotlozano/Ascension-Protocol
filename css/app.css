@@ -210,9 +210,11 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .gl-add-inp:focus{border-color:var(--a)}
 .gl-add-btn{font-size:12px;font-weight:700;padding:7px 12px;background:var(--as);color:var(--a);border-radius:8px;flex-shrink:0}
 .gl-done-sep{margin-top:4px;padding-top:4px;border-top:1px dashed var(--b)}
-.gl-del-btn{width:22px;height:22px;border-radius:50%;background:#c0504a22;color:#c0504a;font-size:16px;font-weight:300;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;transition:all var(--tr)}
-.gl-del-btn:active{transform:scale(.88)}
 .gl-edit-inp{flex:1;background:var(--s2);border:1.5px solid var(--a);border-radius:7px;padding:5px 8px;color:var(--t);font-size:14px;outline:none}
+.gl-ref-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.gl-ref-body{display:none;margin-top:12px}
+.gl-ref-body.open{display:block}
+.gl-ref-sub{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:6px}
 /* Achievements & Badges */
 .ach-sec{margin-bottom:4px}
 .ach-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}

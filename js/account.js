@@ -323,47 +323,72 @@ function buildGroceryItems(){
     glc.lastReset=today;
     save();
   }
-  var nextW=getGroceryTargetWeek();
-  var protein=[],seen={};
+  var tw=getGroceryTargetWeek();
+  // Protein: derived from target week's dinners + staples
+  var protein=[],proteinSeen={};
   var pm={salmon:['Salmon (2 lbs)'],beef:['Lean ground beef (1 lb)'],chicken:['Chicken thighs or breast (2 lbs)'],shrimp:['Shrimp (1 lb)'],pork:['Pork tenderloin (1 lb)'],bison:['Ground bison (1 lb)'],cod:['Cod fillets (1 lb)'],turkey:['Ground turkey (1 lb)'],tuna:['Tuna steak (1 lb)'],steak:['Sirloin steak (1 lb)']};
-  ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var din=getDinner(nextW,d)||'';Object.keys(pm).forEach(function(p){if(din.toLowerCase().indexOf(p)!==-1){pm[p].forEach(function(item){if(!seen[item]){seen[item]=true;protein.push(item);}});}});});
+  ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var din=getDinner(tw,d)||'';Object.keys(pm).forEach(function(p){if(din.toLowerCase().indexOf(p)!==-1){pm[p].forEach(function(item){if(!proteinSeen[item]){proteinSeen[item]=true;protein.push(item);}});}});});
   protein.push('Eggs (dozen)','Chicken breast (meal prep)');
+  // Snacks: all 7 days' ingredients, deduplicated and alphabetically sorted
   var snackSeen={},snackItems=[];
   DAYS.forEach(function(d){
-    var sn=getSnack(nextW,d)||'';
+    var sn=getSnack(tw,d)||'';
     var mapped=SNACK_LOOKUP[sn];
-    if(mapped){mapped.forEach(function(item){if(!snackSeen[item]){snackSeen[item]=true;snackItems.push(item);}});}
+    if(mapped){mapped.forEach(function(item){var k=item.trim().toLowerCase();if(!snackSeen[k]){snackSeen[k]=true;snackItems.push(item);}});}
   });
+  snackItems.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());});
   var raw={
     protein:protein,
     produce:['Spinach / mixed greens (bag)','Broccoli','Sweet potato (3–4)','Brussels sprouts','Zucchini','Cherry tomatoes','Banana (bunch)','Berries (frozen, 1 bag)','Avocado (3–4)','Cucumber','Baby carrots'],
     grains:['Brown rice (bag)','Rolled oats (large container)','Sprouted grain / Ezekiel bread','Quinoa','Whole wheat pasta','Rice cakes'],
     dairy:['Greek yogurt (32oz tub)','Cottage cheese (32oz)','Almond milk (half gallon)','String cheese','Feta (small block)'],
-    snacks:snackItems,
-    pantry:['Natural almond butter','Protein powder','Olive oil','Low-sodium soy sauce','Hot sauce','Honey','Almonds / mixed nuts','Casein protein']
+    snacks:snackItems
   };
+  // Apply per-item glc edits and deletes
   Object.keys(raw).forEach(function(cat){
     raw[cat]=raw[cat].filter(function(item,i){return !glc['del.'+cat+'.'+i];}).map(function(item,i){return glc['edit.'+cat+'.'+i]||item;});
+  });
+  // Global cross-section deduplication: keep item only in first section it appears
+  var globalSeen={};
+  Object.keys(raw).forEach(function(cat){
+    raw[cat]=raw[cat].filter(function(item){
+      var k=item.trim().toLowerCase();
+      if(globalSeen[k])return false;
+      globalSeen[k]=true;
+      return true;
+    });
   });
   return raw;
 }
 function renderGrocery(){
   _glSwipedRow=null;
   document.getElementById('glWeekLabel').textContent=getNextWeekLabel();
-  var nextGW=getGroceryTargetWeek();
-  var dinCard=document.getElementById('glDinnerCard');
-  if(dinCard){
-    var dinTitle=(nextGW>globalWeek()?'Next':'This')+' Week\'s Dinners';
-    var dh='<div class="card"><div class="ct">'+dinTitle+'</div>';
+  var tw=getGroceryTargetWeek();
+  var refCard=document.getElementById('glRefCard');
+  if(refCard){
+    var open=localStorage.getItem('ac_grocery_card_open')==='true';
+    var refTitle=(tw>globalWeek()?'Next':'This')+' Week\'s Meals';
+    var rc='<div class="card" style="margin-bottom:14px">'
+      +'<div class="gl-ref-hdr" onclick="toggleGroceryRefCard()">'
+      +'<div class="ct" style="margin-bottom:0">'+refTitle+'</div>'
+      +'<span class="bn-chev'+(open?' open':'')+'">›</span>'
+      +'</div>'
+      +'<div class="gl-ref-body'+(open?' open':'')+'">'
+      +'<div class="gl-ref-sub" style="margin-top:12px">Dinners</div>';
     ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){
-      var dn=getDinner(nextGW,d)||'—';
-      dh+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(dn)+'</span></div>';
+      var dn=getDinner(tw,d)||'—';
+      rc+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(dn)+'</span></div>';
     });
-    dh+='</div>';
-    dinCard.innerHTML=dh;
+    rc+='<div class="gl-ref-sub" style="margin-top:12px">Snacks</div>';
+    DAYS.forEach(function(d){
+      var sn=getSnack(tw,d)||'—';
+      rc+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(sn)+'</span></div>';
+    });
+    rc+='</div></div>';
+    refCard.innerHTML=rc;
   }
   var items=buildGroceryItems();
-  var labels={protein:'Protein',produce:'Produce',grains:'Grains & Carbs',dairy:'Dairy & Eggs',snacks:'Snacks',pantry:'Pantry & Supplements'};
+  var labels={protein:'Protein',produce:'Produce',grains:'Grains & Carbs',dairy:'Dairy & Eggs',snacks:'Snacks'};
   var chkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4L3.5 6.5L9 1"/></svg>';
   var html='';
   Object.keys(labels).forEach(function(cat){
@@ -402,6 +427,15 @@ function renderGrocery(){
   document.getElementById('glBody').innerHTML=html;
   Object.keys(labels).forEach(function(cat){var inp=document.getElementById('glInp-'+cat);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')addGroceryItem(cat);});});
   attachGrocerySwipe();
+}
+function toggleGroceryRefCard(){
+  var open=localStorage.getItem('ac_grocery_card_open')==='true';
+  open=!open;
+  localStorage.setItem('ac_grocery_card_open',String(open));
+  var body=document.querySelector('#glRefCard .gl-ref-body');
+  var chev=document.querySelector('#glRefCard .bn-chev');
+  if(body)body.classList.toggle('open',open);
+  if(chev)chev.classList.toggle('open',open);
 }
 function openGroceryInlineEdit(spanEl,cat,type,idx){
   if(_glSwipedRow){_glSnapBack();return;}
