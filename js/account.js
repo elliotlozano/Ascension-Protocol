@@ -20,6 +20,41 @@ var SNACK_LOOKUP={
   'Light popcorn + string cheese':['Light popcorn','String cheese']
 };
 
+var BREAKFAST_LOOKUP={
+  'Oats + protein powder + frozen berries + peanut butter':
+    {produce:['Berries (frozen, 1 bag)'],grains:['Rolled oats (large container)'],snacks:['Protein powder','Peanut butter']},
+  '3 scrambled eggs + sprouted grain toast + avocado + orange':
+    {protein:['Eggs (dozen)'],produce:['Avocado (3–4)','Orange'],grains:['Sprouted grain / Ezekiel bread']},
+  'Greek yogurt parfait: yogurt + oats + berries + honey':
+    {dairy:['Greek yogurt (32oz tub)'],produce:['Berries (frozen, 1 bag)'],grains:['Rolled oats (large container)'],snacks:['Honey']},
+  'Protein pancakes: oats + eggs + banana blended':
+    {grains:['Rolled oats (large container)'],protein:['Eggs (dozen)'],produce:['Banana (bunch)']},
+  'Veggie omelette: 3 eggs + spinach + mushrooms + feta + toast':
+    {protein:['Eggs (dozen)'],produce:['Spinach / mixed greens (bag)','Mushrooms'],dairy:['Feta (small block)'],grains:['Sprouted grain / Ezekiel bread']},
+  'Overnight oats: rolled oats + chia seeds + almond milk + berries':
+    {grains:['Rolled oats (large container)','Chia seeds'],dairy:['Almond milk (half gallon)'],produce:['Berries (frozen, 1 bag)']},
+  'Smoothie: frozen banana + protein powder + almond milk + spinach':
+    {produce:['Banana (bunch)','Spinach / mixed greens (bag)'],dairy:['Almond milk (half gallon)'],snacks:['Protein powder']},
+  'Egg muffins (prepped Sunday): eggs + turkey sausage + peppers':
+    {protein:['Eggs (dozen)','Turkey sausage'],produce:['Bell peppers']},
+  'Savory oats: oats + fried egg + hot sauce + everything bagel':
+    {grains:['Rolled oats (large container)'],protein:['Eggs (dozen)'],snacks:['Hot sauce','Everything bagel seasoning']},
+  'French toast: Ezekiel bread + eggs + cinnamon + maple syrup':
+    {grains:['Sprouted grain / Ezekiel bread'],protein:['Eggs (dozen)'],snacks:['Maple syrup']},
+  'Acai bowl: acai + banana + almond milk + granola + berries':
+    {snacks:['Acai packets (frozen)'],produce:['Banana (bunch)','Berries (frozen, 1 bag)'],dairy:['Almond milk (half gallon)'],grains:['Granola']},
+  'Breakfast burrito: eggs + black beans + salsa + wheat tortilla':
+    {protein:['Eggs (dozen)'],grains:['Whole wheat tortillas'],snacks:['Black beans (canned)','Salsa']},
+  'Cottage cheese bowl: cottage cheese + berries + granola + honey':
+    {dairy:['Cottage cheese (32oz)'],produce:['Berries (frozen, 1 bag)'],grains:['Granola'],snacks:['Honey']},
+  'Turkey bacon + 3 eggs + whole grain toast + sliced tomato':
+    {protein:['Turkey bacon','Eggs (dozen)'],grains:['Sprouted grain / Ezekiel bread'],produce:['Cherry tomatoes']},
+  'Banana oat shake: banana + oats + protein powder + almond milk':
+    {produce:['Banana (bunch)'],grains:['Rolled oats (large container)'],snacks:['Protein powder'],dairy:['Almond milk (half gallon)']},
+  'Smoked salmon + cream cheese + whole grain toast + capers':
+    {protein:['Smoked salmon (4oz)'],dairy:['Cream cheese'],grains:['Sprouted grain / Ezekiel bread'],snacks:['Capers']}
+};
+
 // Feature 7: Nizoral removed — only Finasteride and Dutasteride remain
 var GUIDE_DATA = {
   skincare: {
@@ -324,24 +359,49 @@ function buildGroceryItems(){
     save();
   }
   var tw=getGroceryTargetWeek();
-  // Protein: derived from target week's dinners + staples
+  // Protein: derived from target week's dinners
   var protein=[],proteinSeen={};
   var pm={salmon:['Salmon (2 lbs)'],beef:['Lean ground beef (1 lb)'],chicken:['Chicken thighs or breast (2 lbs)'],shrimp:['Shrimp (1 lb)'],pork:['Pork tenderloin (1 lb)'],bison:['Ground bison (1 lb)'],cod:['Cod fillets (1 lb)'],turkey:['Ground turkey (1 lb)'],tuna:['Tuna steak (1 lb)'],steak:['Sirloin steak (1 lb)']};
-  ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var din=getDinner(tw,d)||'';Object.keys(pm).forEach(function(p){if(din.toLowerCase().indexOf(p)!==-1){pm[p].forEach(function(item){if(!proteinSeen[item]){proteinSeen[item]=true;protein.push(item);}});}});});
-  protein.push('Eggs (dozen)','Chicken breast (meal prep)');
-  // Snacks: all 7 days' ingredients, deduplicated and alphabetically sorted
-  var snackSeen={},snackItems=[];
+  ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var din=getDinner(tw,d)||'';Object.keys(pm).forEach(function(p){if(din.toLowerCase().indexOf(p)!==-1){pm[p].forEach(function(item){var k=item.trim().toLowerCase();if(!proteinSeen[k]){proteinSeen[k]=true;protein.push(item);}});}});});
+  // Breakfast ingredients: collect per section across all 7 days
+  var bfSeen={protein:{},produce:{},grains:{},dairy:{},snacks:{}};
+  var bfItems={protein:[],produce:[],grains:[],dairy:[],snacks:[]};
   DAYS.forEach(function(d){
-    var sn=getSnack(tw,d)||'';
-    var mapped=SNACK_LOOKUP[sn];
-    if(mapped){mapped.forEach(function(item){var k=item.trim().toLowerCase();if(!snackSeen[k]){snackSeen[k]=true;snackItems.push(item);}});}
+    var bf=getBreakfast(tw,d)||'';
+    var mapped=BREAKFAST_LOOKUP[bf];
+    if(mapped){
+      ['protein','produce','grains','dairy','snacks'].forEach(function(cat){
+        (mapped[cat]||[]).forEach(function(item){
+          var k=item.trim().toLowerCase();
+          if(!bfSeen[cat][k]){bfSeen[cat][k]=true;bfItems[cat].push(item);}
+        });
+      });
+    }
   });
+  // Merge breakfast proteins into dinner-derived protein list
+  bfItems.protein.forEach(function(item){var k=item.trim().toLowerCase();if(!proteinSeen[k]){proteinSeen[k]=true;protein.push(item);}});
+  // Build produce: static base + breakfast additions
+  var produceSeen={},produce=[];
+  ['Spinach / mixed greens (bag)','Broccoli','Sweet potato (3–4)','Brussels sprouts','Zucchini','Cherry tomatoes','Banana (bunch)','Berries (frozen, 1 bag)','Avocado (3–4)','Cucumber','Baby carrots'].forEach(function(item){var k=item.trim().toLowerCase();produceSeen[k]=true;produce.push(item);});
+  bfItems.produce.forEach(function(item){var k=item.trim().toLowerCase();if(!produceSeen[k]){produceSeen[k]=true;produce.push(item);}});
+  // Build grains: static base + breakfast additions
+  var grainsSeen={},grains=[];
+  ['Brown rice (bag)','Rolled oats (large container)','Sprouted grain / Ezekiel bread','Quinoa','Whole wheat pasta','Rice cakes'].forEach(function(item){var k=item.trim().toLowerCase();grainsSeen[k]=true;grains.push(item);});
+  bfItems.grains.forEach(function(item){var k=item.trim().toLowerCase();if(!grainsSeen[k]){grainsSeen[k]=true;grains.push(item);}});
+  // Build dairy: static base + breakfast additions
+  var dairySeen={},dairy=[];
+  ['Greek yogurt (32oz tub)','Cottage cheese (32oz)','Almond milk (half gallon)','String cheese','Feta (small block)'].forEach(function(item){var k=item.trim().toLowerCase();dairySeen[k]=true;dairy.push(item);});
+  bfItems.dairy.forEach(function(item){var k=item.trim().toLowerCase();if(!dairySeen[k]){dairySeen[k]=true;dairy.push(item);}});
+  // Snacks: rotation snacks + breakfast snacks, alphabetically sorted
+  var snackSeen={},snackItems=[];
+  DAYS.forEach(function(d){var sn=getSnack(tw,d)||'';var mapped=SNACK_LOOKUP[sn];if(mapped){mapped.forEach(function(item){var k=item.trim().toLowerCase();if(!snackSeen[k]){snackSeen[k]=true;snackItems.push(item);}});}});
+  bfItems.snacks.forEach(function(item){var k=item.trim().toLowerCase();if(!snackSeen[k]){snackSeen[k]=true;snackItems.push(item);}});
   snackItems.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());});
   var raw={
     protein:protein,
-    produce:['Spinach / mixed greens (bag)','Broccoli','Sweet potato (3–4)','Brussels sprouts','Zucchini','Cherry tomatoes','Banana (bunch)','Berries (frozen, 1 bag)','Avocado (3–4)','Cucumber','Baby carrots'],
-    grains:['Brown rice (bag)','Rolled oats (large container)','Sprouted grain / Ezekiel bread','Quinoa','Whole wheat pasta','Rice cakes'],
-    dairy:['Greek yogurt (32oz tub)','Cottage cheese (32oz)','Almond milk (half gallon)','String cheese','Feta (small block)'],
+    produce:produce,
+    grains:grains,
+    dairy:dairy,
     snacks:snackItems
   };
   // Apply per-item glc edits and deletes
@@ -378,6 +438,11 @@ function renderGrocery(){
     ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){
       var dn=getDinner(tw,d)||'—';
       rc+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(dn)+'</span></div>';
+    });
+    rc+='<div class="gl-ref-sub" style="margin-top:12px">Breakfasts</div>';
+    DAYS.forEach(function(d){
+      var bf=getBreakfast(tw,d)||'—';
+      rc+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(bf)+'</span></div>';
     });
     rc+='<div class="gl-ref-sub" style="margin-top:12px">Snacks</div>';
     DAYS.forEach(function(d){
