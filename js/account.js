@@ -299,17 +299,31 @@ function signOut(){sbSignOut();}
 function clearChatMemory(){chatHist=[];localStorage.removeItem('ac_chat');save();var btn=event.target;btn.textContent='Cleared ✓';setTimeout(function(){btn.textContent='Clear';},2000);}
 
 // ── Grocery ───────────────────────────────────────────────────
-function getNextWeekLabel(){var now=new Date(),dow=now.getDay(),daysToSat=(6-dow+7)%7||7,sat=new Date(now);sat.setDate(now.getDate()+daysToSat);var mon=new Date(sat);mon.setDate(sat.getDate()+1);var fmt=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});};return'Week of '+fmt(mon)+' – '+fmt(new Date(mon.getTime()+6*86400000));}
+function getGroceryTargetWeek(){
+  var now=new Date();
+  var estHour=parseInt(now.toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false}),10);
+  var dow=now.getDay();
+  if((dow===5&&estHour>=12)||dow===6||dow===0)return globalWeek()+1;
+  return globalWeek();
+}
+function getNextWeekLabel(){
+  var tw=getGroceryTargetWeek();
+  var mon=new Date(PROTO_START);
+  mon.setDate(mon.getDate()+(tw-1)*7);
+  var fmt=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
+  return'Week of '+fmt(mon)+' – '+fmt(new Date(mon.getTime()+6*86400000));
+}
 function buildGroceryItems(){
-  // Friday auto-reset
+  // Friday 12pm EST auto-reset
   var today=todayKey();
   var now=new Date();
-  if(now.getDay()===5&&glc.lastReset!==today){
+  var estHour=parseInt(now.toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false}),10);
+  if(now.getDay()===5&&estHour>=12&&glc.lastReset!==today){
     Object.keys(glc).forEach(function(k){if(k!=='lastReset')delete glc[k];});
     glc.lastReset=today;
     save();
   }
-  var nextW=globalWeek()+1;
+  var nextW=getGroceryTargetWeek();
   var protein=[],seen={};
   var pm={salmon:['Salmon (2 lbs)'],beef:['Lean ground beef (1 lb)'],chicken:['Chicken thighs or breast (2 lbs)'],shrimp:['Shrimp (1 lb)'],pork:['Pork tenderloin (1 lb)'],bison:['Ground bison (1 lb)'],cod:['Cod fillets (1 lb)'],turkey:['Ground turkey (1 lb)'],tuna:['Tuna steak (1 lb)'],steak:['Sirloin steak (1 lb)']};
   ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var din=getDinner(nextW,d)||'';Object.keys(pm).forEach(function(p){if(din.toLowerCase().indexOf(p)!==-1){pm[p].forEach(function(item){if(!seen[item]){seen[item]=true;protein.push(item);}});}});});
@@ -336,10 +350,11 @@ function buildGroceryItems(){
 function renderGrocery(){
   _glSwipedRow=null;
   document.getElementById('glWeekLabel').textContent=getNextWeekLabel();
-  var nextGW=globalWeek()+1;
+  var nextGW=getGroceryTargetWeek();
   var dinCard=document.getElementById('glDinnerCard');
   if(dinCard){
-    var dh='<div class="card"><div class="ct">Next Week\'s Dinners</div>';
+    var dinTitle=(nextGW>globalWeek()?'Next':'This')+' Week\'s Dinners';
+    var dh='<div class="card"><div class="ct">'+dinTitle+'</div>';
     ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){
       var dn=getDinner(nextGW,d)||'—';
       dh+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(dn)+'</span></div>';
