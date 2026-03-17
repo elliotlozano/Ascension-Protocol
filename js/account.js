@@ -368,7 +368,6 @@ function renderGrocery(){
         +'<span class="gl-name" onclick="openGroceryInlineEdit(this,\''+cat+'\',\''+obj.type+'\','+obj.idx+')">'+escHtml(obj.item)+'</span>'
         +'</div></div>';
     });
-    html+='<div class="gl-add-row"><input class="gl-add-inp" id="glInp-'+cat+'" placeholder="Add item..." type="text"><button class="gl-add-btn" onclick="addGroceryItem(\''+cat+'\')">+</button></div>';
     if(checked.length){
       html+='<div class="gl-done-sep">';
       checked.forEach(function(obj){
@@ -382,6 +381,7 @@ function renderGrocery(){
       });
       html+='</div>';
     }
+    html+='<div class="gl-add-row"><input class="gl-add-inp" id="glInp-'+cat+'" placeholder="Add item..." type="text"><button class="gl-add-btn" onclick="addGroceryItem(\''+cat+'\')">+</button></div>';
     html+='</div>';
   });
   document.getElementById('glBody').innerHTML=html;
