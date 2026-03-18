@@ -392,22 +392,28 @@ function renderGrocery(){
       +'<span class="bn-chev'+(open?' open':'')+'">›</span>'
       +'</div>'
       +'<div class="gl-ref-body'+(open?' open':'')+'">'
-      +'<div class="gl-ref-sub" style="margin-top:12px;color:var(--a)">Dinners</div>';
+      +'<div class="gl-ref-cols">'
+      +'<div class="gl-ref-col">'
+      +'<div class="gl-ref-sub" style="color:var(--a)">Dinners</div>';
     ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){
       var dn=getDinner(tw,d)||'—';
       rc+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(dn)+'</span></div>';
     });
-    rc+='<div class="gl-ref-sub" style="margin-top:12px;color:var(--a)">Breakfasts</div>';
+    rc+='</div>'
+      +'<div class="gl-ref-col">'
+      +'<div class="gl-ref-sub" style="color:var(--a)">Breakfasts</div>';
     DAYS.forEach(function(d){
       var bf=getBreakfast(tw,d)||'—';
       rc+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(bf)+'</span></div>';
     });
-    rc+='<div class="gl-ref-sub" style="margin-top:12px;color:var(--a)">Snacks</div>';
+    rc+='</div>'
+      +'<div class="gl-ref-col">'
+      +'<div class="gl-ref-sub" style="color:var(--a)">Snacks</div>';
     DAYS.forEach(function(d){
       var sn=getSnack(tw,d)||'—';
       rc+='<div class="mr"><span class="ml">'+d.slice(0,3)+'</span><span class="mv">'+escHtml(sn)+'</span></div>';
     });
-    rc+='</div></div>';
+    rc+='</div></div></div></div>';
     refCard.innerHTML=rc;
   }
   // Use cached generation if available for this target week; otherwise generate

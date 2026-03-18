@@ -215,6 +215,18 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .gl-ref-body{display:none;margin-top:12px}
 .gl-ref-body.open{display:block}
 .gl-ref-sub{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:6px}
+.gl-ref-cols{display:flex;flex-direction:column}
+.gl-ref-col{flex:1}
+.gl-ref-col+.gl-ref-col{margin-top:12px}
+@media(min-width:768px){
+  .gl-ref-body{display:block!important}
+  .gl-ref-hdr{cursor:default}
+  .gl-ref-hdr .bn-chev{display:none!important}
+  .gl-ref-cols{flex-direction:row;gap:16px;align-items:flex-start}
+  .gl-ref-col+.gl-ref-col{margin-top:0}
+  .gl-ref-col .mv{white-space:normal}
+  .gl-ref-col .ml{min-width:36px}
+}
 /* Achievements & Badges */
 .ach-sec{margin-bottom:4px}
 .ach-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
