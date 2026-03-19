@@ -2,6 +2,13 @@
 
 function getSys(){
   var today=todayKey();
+  var gWeek=globalWeek();
+  var sched=buildSchedule(cD,cProtoMonth,gWeek);
+  var schedLines=sched.map(function(t){return t.time+' — '+t.task;}).join('\n');
+  var mealPrefixes=['Breakfast:','Lunch:','Dinner:','Snack:','Evening snack:'];
+  var mealLines=sched.filter(function(t){
+    return t.tag==='nutrition'&&mealPrefixes.some(function(p){return t.task.indexOf(p)===0;});
+  }).map(function(t){return t.time+' — '+t.task;}).join('\n');
   return 'Protocol assistant for Ascension app. 30yo male, returning to fitness. V-taper, 5K races, skincare.\n'
     +'Today is '+today+'.\n'
     +'MEALS: 16 breakfasts (weekdays), 16 dinners (Mon-Thu), leftovers=lunch, Mon=cafeteria, Fri=date night, weekends=snack. Evening snack 9:30pm.\n'
@@ -13,8 +20,11 @@ function getSys(){
     +'  1) Date-scoped (one-time, today only): bf.actual.YYYY-MM-DD, din.actual.YYYY-MM-DD, lunch.actual.YYYY-MM-DD, sn.actual.YYYY-MM-DD\n'
     +'  2) Rotation (permanent, repeating): bf.{globalWeek}.{Day}, din.{0-15}, monlunch, sn.{globalWeek}.{Day}\n'
     +'If user says "just for today" or describes a single meal change, use date-scoped key with today\'s date. If they want it going forward, use rotation key. When unclear, ask: "Just for today, or going forward?"\n'
+    +'To RESTORE/REVERT a meal to its original planned value, output a JSON override with the key set to null. Example: ```json{"overrides":{"din.actual.'+today+'":null}}``` Setting a key to null deletes the override and the schedule falls back to the original rotation meal.\n'
     +'Other keys: m.{protoMonth}.{run|ret|wt|rd|label|hl}, m.{protoMonth}.rn (array), wo.{Mon|Tue|Fri|SatA|SatB}.\n'
-    +'Be warm, concise, encouraging.';
+    +'Be warm, concise, encouraging.\n\n'
+    +'TODAY\'S SCHEDULE ('+cD+'):\n'+schedLines+'\n\n'
+    +'TODAY\'S MEALS:\n'+mealLines;
 }
 
 function addBubble(cls,text){
@@ -61,7 +71,7 @@ function sendMsg(){
     if(data.error){addBubble('a','Error: '+data.error.message);btn.disabled=false;return;}
     var full=(data.content||[]).map(function(b){return b.text||'';}).join('');
     var jm=full.match(/```json\s*([\s\S]*?)```/);
-    if(jm){try{var parsed=JSON.parse(jm[1].trim());if(parsed.overrides){var dk=todayKey();Object.keys(parsed.overrides).forEach(function(k){ovr[k]=parsed.overrides[k];var am=k.match(/^(bf|din|lunch|sn)\.actual\.(.+)$/);if(am&&am[2]===dk)_correctMacroForActualOverride(am[1],parsed.overrides[k]);});}}catch(e){}}
+    if(jm){try{var parsed=JSON.parse(jm[1].trim());if(parsed.overrides){var dk=todayKey();Object.keys(parsed.overrides).forEach(function(k){var v=parsed.overrides[k];if(v===null){delete ovr[k];}else{ovr[k]=v;var am=k.match(/^(bf|din|lunch|sn)\.actual\.(.+)$/);if(am&&am[2]===dk)_correctMacroForActualOverride(am[1],v);}});}}catch(e){}}
     var clean=full.replace(/```json[\s\S]*?```/g,'').trim();
     addBubble('a',clean);
     chatHist.push({role:'assistant',content:full});
