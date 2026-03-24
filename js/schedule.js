@@ -103,5 +103,7 @@ function buildSchedule(day, protoMonth, gWeek) {
   t.push({time:'9:15 PM', task:'Magnesium Glycinate 300–400mg', tag:'supplement'});
   t.push({time:'9:30 PM', task:'Evening snack: '+getEvSnack(gWeek,day), tag:'nutrition'});
   t.push({time:'10:00 PM', task:'Sleep — 7 to 8 hours', tag:'sleep'});
+  t.push({time:'7:10 AM', task:'Hair: Finasteride 1mg', tag:'hair'});
+  t.push({time:'9:45 PM', task:'Hair: Minoxidil', tag:'hair'});
   return t;
 }

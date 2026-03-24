@@ -74,7 +74,7 @@ var GUIDE_DATA = {
 var ACH_DISTS=[{k:'mile',l:'1 Mile',icon:'🏃'},{k:'fivek',l:'5K',icon:'🏅'},{k:'tenk',l:'10K',icon:'🏆'}];
 
 // ── Badge definitions ─────────────────────────────────────────
-// Mile time tiers (self-replacing): only highest unlocked shown as earned
+// FITNESS: Mile time tiers
 var MILE_TIERS = [
   {id:'mile_sub10', name:'Sub-10 Mile', icon:'🏃', sec: 10*60},
   {id:'mile_sub9',  name:'Sub-9 Mile',  icon:'🏃', sec:  9*60},
@@ -82,7 +82,7 @@ var MILE_TIERS = [
   {id:'mile_sub7',  name:'Sub-7 Mile',  icon:'🏃', sec:  7*60},
   {id:'mile_sub6',  name:'Sub-6 Mile',  icon:'🏃', sec:  6*60}
 ];
-// Weekly mileage tiers (self-replacing)
+// FITNESS: Weekly mileage tiers
 var MILES_TIERS = [
   {id:'miles_10',  name:'10-Mile Week',  icon:'🛤️', miles:10},
   {id:'miles_15',  name:'15-Mile Week',  icon:'🛤️', miles:15},
@@ -94,13 +94,27 @@ var MILES_TIERS = [
   {id:'miles_45',  name:'45-Mile Week',  icon:'🛤️', miles:45},
   {id:'miles_50',  name:'50-Mile Week',  icon:'🛤️', miles:50}
 ];
-// Phase completion badges
+// FITNESS: Bench press badges
+var BENCH_BADGES = [
+  {id:'bench_135', name:'Bench: 135 lbs', icon:'🏋️', desc:'Log a bench press PR of 135 lbs or more', minLbs:135},
+  {id:'bench_185', name:'Bench: 185 lbs', icon:'🏋️', desc:'Log a bench press PR of 185 lbs or more', minLbs:185},
+  {id:'bench_225', name:'Bench: 225 lbs', icon:'🏋️', desc:'Log a bench press PR of 225 lbs or more', minLbs:225}
+];
+// FITNESS: Squat and other lift badges
+var SQUAT_LIFT_BADGES = [
+  {id:'squat_bw',      name:'Bodyweight Squat',  icon:'🦵', desc:'Squat at or above your current body weight'},
+  {id:'squat_225',     name:'Squat: 225 lbs',    icon:'🦵', desc:'Log a squat PR of 225 lbs or more', minLbs:225},
+  {id:'squat_315',     name:'Squat: 315 lbs',    icon:'🦵', desc:'Log a squat PR of 315 lbs or more', minLbs:315},
+  {id:'deadlift_first',name:'First Deadlift PR', icon:'🏋️', desc:'Log your first deadlift PR'},
+  {id:'pullup_first',  name:'First Pull-up PR',  icon:'🤸', desc:'Log your first weighted pull-up PR'}
+];
+// PROTOCOL: Phase completion badges
 var PHASE_BADGES = [
   {id:'phase1_done', name:'Phase I Complete',   icon:'✦', phaseEnd:6},
   {id:'phase2_done', name:'Phase II Complete',  icon:'⬡', phaseEnd:18},
   {id:'phase3_done', name:'Phase III Complete', icon:'◈', phaseEnd:30}
 ];
-// Discipline badges (months since PROTO_START)
+// PROTOCOL: Discipline badges (months since PROTO_START)
 var DISC_BADGES = [
   {id:'disc_6mo',  name:'6-Month Disciple', icon:'🎖️',  months:6},
   {id:'disc_1yr',  name:'1-Year Disciple',  icon:'🏅',  months:12},
@@ -108,125 +122,421 @@ var DISC_BADGES = [
   {id:'disc_3yr',  name:'3-Year Disciple',  icon:'🌟',  months:36},
   {id:'disc_5yr',  name:'5-Year Disciple',  icon:'👑',  months:60}
 ];
+// PROTOCOL: Streak badges
+var STREAK_BADGES = [
+  {id:'streak_7',    name:'7-Day Streak',        icon:'🔥', desc:'7 consecutive days at 100% completion',   days:7},
+  {id:'streak_30',   name:'30-Day Streak',        icon:'🔥', desc:'30 consecutive days at 100% completion',  days:30},
+  {id:'streak_90',   name:'90-Day Streak',        icon:'🔥', desc:'90 consecutive days at 100% completion',  days:90},
+  {id:'weeks_90pct', name:'3 Weeks Above 90%',    icon:'📈', desc:'3 consecutive weeks with 90%+ score',     weeks:3, threshold:90}
+];
+// HEALTH: Skin badges
+var SKIN_BADGES = [
+  {id:'spf_30',       name:'SPF Streak: 30 Days', icon:'☀️', desc:'Complete 30 skincare AM tasks', keyword:'SPF', target:30},
+  {id:'retinol_first',name:'First Retinol Night', icon:'🌙', desc:'Complete your first PM retinol routine', keyword:'Retinol', target:1}
+];
+// HEALTH: Hair badges
+var HAIR_BADGES = [
+  {id:'fin_30',   name:'Finasteride: 30 Days',  icon:'💊', desc:'Complete 30 finasteride tasks',  keyword:'Finasteride', target:30},
+  {id:'fin_180',  name:'Finasteride: 6 Months', icon:'💊', desc:'Complete 180 finasteride tasks', keyword:'Finasteride', target:180},
+  {id:'minox_30', name:'Minoxidil: 30 Days',    icon:'💆', desc:'Complete 30 minoxidil tasks',    keyword:'Minoxidil',   target:30}
+];
+// HEALTH: Biometrics badges
+var BIO_BADGES = [
+  {id:'first_weigh', name:'First Weigh-In', icon:'⚖️', desc:'Log your first weight entry'},
+  {id:'weight_155',  name:'155 lbs',        icon:'💪', desc:'Log a weight entry of 155 lbs or higher', minWeight:155},
+  {id:'weight_160',  name:'160 lbs',        icon:'💪', desc:'Log a weight entry of 160 lbs or higher', minWeight:160},
+  {id:'weight_165',  name:'165 lbs',        icon:'💪', desc:'Log a weight entry of 165 lbs or higher', minWeight:165}
+];
+// Achievement tab state (default: protocol)
+var _achTab = localStorage.getItem('ac_ach_tab') || 'protocol';
+// Streak cache (cleared on each renderAchievements call)
+var _streakData = null;
 
 function timeToSec(t){var p=t.split(':');if(p.length===2)return parseInt(p[0])*60+parseFloat(p[1]);return parseFloat(t)||9999;}
+function secToTime(s){var m=Math.floor(s/60);var sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
 
-// Compute which badges have been earned
+// ── Achievement helpers ───────────────────────────────────────
+
+// Count how many chk entries (value=true) correspond to a task containing keyword
+function countTaskCompletions(keyword) {
+  var count = 0;
+  var kw = keyword.toLowerCase();
+  Object.keys(chk).forEach(function(key) {
+    if (!chk[key]) return;
+    var m = key.match(/^gw(\d+)([A-Za-z]+)(\d+)$/);
+    if (!m) return;
+    var gw = parseInt(m[1]);
+    var day = m[2];
+    var idx = parseInt(m[3]);
+    if (DAYS.indexOf(day) === -1) return;
+    var pm = Math.ceil(gw / 4);
+    var tasks = buildSchedule(day, pm, gw);
+    if (tasks[idx] && tasks[idx].task.toLowerCase().indexOf(kw) !== -1) count++;
+  });
+  return count;
+}
+
+// Build a map of dateString→pct, then find longest / current consecutive-100% day streaks
+function computeStreakData() {
+  var datePcts = {};
+  var gwDaySet = {};
+  Object.keys(chk).forEach(function(key) {
+    var m = key.match(/^gw(\d+)([A-Za-z]+)(\d+)$/);
+    if (!m) return;
+    var gw = parseInt(m[1]), day = m[2];
+    if (DAYS.indexOf(day) === -1) return;
+    gwDaySet['gw'+gw+day] = {gw:gw, day:day};
+  });
+  Object.keys(gwDaySet).forEach(function(k) {
+    var e = gwDaySet[k], gw = e.gw, day = e.day;
+    var pm = Math.ceil(gw / 4);
+    var tasks = buildSchedule(day, pm, gw);
+    var total = tasks.length, done = 0;
+    tasks.forEach(function(_, i) { if (chk['gw'+gw+day+i]) done++; });
+    var pct = total > 0 ? Math.round(done / total * 100) : 0;
+    var dayIdx = DAYS.indexOf(day);
+    var date = new Date(PROTO_START);
+    date.setDate(date.getDate() + (gw - 1) * 7 + dayIdx);
+    var ds = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+    datePcts[ds] = pct;
+  });
+  var dates = Object.keys(datePcts).sort();
+  var longest = 0, curStreak = 0;
+  dates.forEach(function(ds, i) {
+    if (datePcts[ds] === 100) {
+      if (i === 0) { curStreak = 1; }
+      else {
+        var diff = (new Date(ds) - new Date(dates[i-1])) / 86400000;
+        curStreak = (diff === 1) ? curStreak + 1 : 1;
+      }
+      if (curStreak > longest) longest = curStreak;
+    } else { curStreak = 0; }
+  });
+  return {longest: longest, current: curStreak};
+}
+
+function getStreakData() {
+  if (!_streakData) _streakData = computeStreakData();
+  return _streakData;
+}
+
+// Find longest run of consecutive global weeks all >= threshold%
+function getMaxConsecWeeks(threshold) {
+  var gwNums = Object.keys(weekScores).map(function(k){ return parseInt(k.replace('gw','')); })
+    .filter(function(n){ return !isNaN(n); }).sort(function(a,b){return a-b;});
+  var streak = 0, maxStreak = 0;
+  gwNums.forEach(function(n, i) {
+    if ((weekScores['gw'+n]||0) >= threshold) {
+      streak = (i > 0 && gwNums[i-1] === n-1) ? streak + 1 : 1;
+      if (streak > maxStreak) maxStreak = streak;
+    } else { streak = 0; }
+  });
+  return maxStreak;
+}
+
+// ── computeEarnedBadges ───────────────────────────────────────
 function computeEarnedBadges() {
   var earned = {};
+  _streakData = null; // reset cache
 
-  // Perfect Week: any week that hit 100% in weekScores
-  Object.keys(weekScores).forEach(function(k){
-    if (weekScores[k] === 100) earned['perfect_week'] = true;
-  });
+  // PROTOCOL: Perfect Week
+  Object.keys(weekScores).forEach(function(k){ if (weekScores[k] === 100) earned['perfect_week'] = true; });
 
-  // 5K Finisher
-  if (ach.fivek && ach.fivek.length > 0) earned['finisher_5k'] = true;
+  // PROTOCOL: Phase Completion
+  PHASE_BADGES.forEach(function(b) { if (cProtoMonth > b.phaseEnd) earned[b.id] = true; });
 
-  // Mile Time tiers (self-replacing — mark all tiers beaten)
-  if (prs.mile) {
-    var sec = timeToSec(prs.mile.v);
-    MILE_TIERS.forEach(function(t) {
-      if (sec < t.sec) earned[t.id] = true;
-    });
-  }
-
-  // Weekly Mileage tiers (self-replacing)
-  var maxMiles = 0;
-  Object.keys(weekMiles).forEach(function(k){ if(weekMiles[k] > maxMiles) maxMiles = weekMiles[k]; });
-  MILES_TIERS.forEach(function(t) {
-    if (maxMiles >= t.miles) earned[t.id] = true;
-  });
-
-  // Phase Completion
-  PHASE_BADGES.forEach(function(b) {
-    if (cProtoMonth > b.phaseEnd) earned[b.id] = true;
-  });
-
-  // Discipline — months elapsed since PROTO_START
+  // PROTOCOL: Discipline
   var now = new Date();
   var msPerMonth = 30.44 * 24 * 3600 * 1000;
   var monthsElapsed = Math.floor((now - PROTO_START) / msPerMonth);
-  DISC_BADGES.forEach(function(b) {
-    if (monthsElapsed >= b.months) earned[b.id] = true;
+  DISC_BADGES.forEach(function(b) { if (monthsElapsed >= b.months) earned[b.id] = true; });
+
+  // PROTOCOL: Streaks
+  var sd = getStreakData();
+  STREAK_BADGES.forEach(function(b) {
+    if (b.days && sd.longest >= b.days) earned[b.id] = true;
+    if (b.weeks && getMaxConsecWeeks(b.threshold) >= b.weeks) earned[b.id] = true;
+  });
+
+  // FITNESS: Running
+  if (ach.fivek && ach.fivek.length > 0) earned['finisher_5k'] = true;
+  if (prs.mile) {
+    var sec = timeToSec(prs.mile.v);
+    MILE_TIERS.forEach(function(t) { if (sec < t.sec) earned[t.id] = true; });
+  }
+  var maxMiles = 0;
+  Object.keys(weekMiles).forEach(function(k){ if(weekMiles[k] > maxMiles) maxMiles = weekMiles[k]; });
+  MILES_TIERS.forEach(function(t) { if (maxMiles >= t.miles) earned[t.id] = true; });
+
+  // FITNESS: Lifting
+  var benchVal = prs.bench ? parseFloat(prs.bench.v) : 0;
+  BENCH_BADGES.forEach(function(b) { if (benchVal >= b.minLbs) earned[b.id] = true; });
+  var squatVal = prs.squat ? parseFloat(prs.squat.v) : 0;
+  var bodyWt = parseFloat(bio.weight) || 0;
+  if (squatVal > 0 && bodyWt > 0 && squatVal >= bodyWt) earned['squat_bw'] = true;
+  if (squatVal >= 225) earned['squat_225'] = true;
+  if (squatVal >= 315) earned['squat_315'] = true;
+  if (prs.deadlift) earned['deadlift_first'] = true;
+  if (prs.pullup) earned['pullup_first'] = true;
+
+  // HEALTH: Skin
+  var spfCount = countTaskCompletions('SPF');
+  if (spfCount >= 30) earned['spf_30'] = true;
+  var retinolCount = countTaskCompletions('Retinol');
+  if (retinolCount >= 1) earned['retinol_first'] = true;
+
+  // HEALTH: Hair
+  var finCount = countTaskCompletions('Finasteride');
+  if (finCount >= 30) earned['fin_30'] = true;
+  if (finCount >= 180) earned['fin_180'] = true;
+  var minoxCount = countTaskCompletions('Minoxidil');
+  if (minoxCount >= 30) earned['minox_30'] = true;
+
+  // HEALTH: Biometrics
+  var wtHist = bio.wtHist || [];
+  if (wtHist.length > 0) earned['first_weigh'] = true;
+  wtHist.forEach(function(e) {
+    var w = parseFloat(e.v);
+    if (isNaN(w)) return;
+    if (w >= 155) earned['weight_155'] = true;
+    if (w >= 160) earned['weight_160'] = true;
+    if (w >= 165) earned['weight_165'] = true;
   });
 
   return earned;
 }
 
-function renderAchievements(){
+// ── Badge row renderers ───────────────────────────────────────
+function badgeRow(icon, name, desc, isEarned, progress) {
+  var rowCls = 'badge-row' + (isEarned ? '' : ' locked-row');
+  var cirCls = 'badge-circle ' + (isEarned ? 'earned' : 'locked');
+  var h = '<div class="'+rowCls+'">';
+  h += '<div class="'+cirCls+'">'+icon+'</div>';
+  h += '<div class="badge-row-body">';
+  h += '<div class="badge-row-name">'+name+'</div>';
+  h += '<div class="badge-row-desc">'+desc+'</div>';
+  if (progress) {
+    var pct = progress.target > 0 ? Math.min(100, Math.round(progress.cur / progress.target * 100)) : 0;
+    h += '<div class="badge-row-prog">';
+    h += '<div class="badge-prog-bar"><div class="badge-prog-fill" style="width:'+pct+'%"></div></div>';
+    h += '<div class="badge-prog-lbl">'+progress.label+'</div>';
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function badgeSectionLabel(text) {
+  return '<div class="badge-section-lbl">'+text+'</div>';
+}
+
+function badgeLockDivider() {
+  return '<div class="badge-locked-divider"><span>Locked</span></div>';
+}
+
+function renderBadgeGroup(badges, earned, getDesc, getProgress) {
+  var earnedArr = badges.filter(function(b){ return !!earned[b.id]; });
+  var lockedArr = badges.filter(function(b){ return !earned[b.id]; });
+  var h = '';
+  earnedArr.forEach(function(b){ h += badgeRow(b.icon, b.name, getDesc(b), true, getProgress ? getProgress(b, true) : null); });
+  if (earnedArr.length && lockedArr.length) h += badgeLockDivider();
+  else if (!earnedArr.length && lockedArr.length) {} // no divider needed
+  lockedArr.forEach(function(b){ h += badgeRow(b.icon, b.name, getDesc(b), false, getProgress ? getProgress(b, false) : null); });
+  return h;
+}
+
+// ── selAchTab / renderAchievements ────────────────────────────
+function selAchTab(tab) {
+  _achTab = tab;
+  localStorage.setItem('ac_ach_tab', tab);
+  renderAchievements();
+}
+
+function renderAchievements() {
+  _streakData = null;
   var earned = computeEarnedBadges();
-  var ranks=['gold','silver','bronze'],rlbls=['#1','#2','#3'];
+
+  // Progress values
+  var spfCount    = countTaskCompletions('SPF');
+  var retinolCount= countTaskCompletions('Retinol');
+  var finCount    = countTaskCompletions('Finasteride');
+  var minoxCount  = countTaskCompletions('Minoxidil');
+  var sd          = getStreakData();
+  var consecWeeks = getMaxConsecWeeks(90);
+  var maxMiles    = 0;
+  Object.keys(weekMiles).forEach(function(k){ if(weekMiles[k]>maxMiles) maxMiles=weekMiles[k]; });
+  var mileSec     = prs.mile ? timeToSec(prs.mile.v) : null;
+  var benchVal    = prs.bench ? parseFloat(prs.bench.v) : 0;
+  var squatVal    = prs.squat ? parseFloat(prs.squat.v) : 0;
+  var monthsElapsed = Math.floor((new Date() - PROTO_START) / (30.44 * 24 * 3600 * 1000));
+
+  // Tab badge counts
+  var healthIds = SKIN_BADGES.concat(HAIR_BADGES).concat(BIO_BADGES).map(function(b){return b.id;});
+  var fitnessIds = ['finisher_5k']
+    .concat(MILE_TIERS.map(function(b){return b.id;}))
+    .concat(MILES_TIERS.map(function(b){return b.id;}))
+    .concat(BENCH_BADGES.map(function(b){return b.id;}))
+    .concat(SQUAT_LIFT_BADGES.map(function(b){return b.id;}));
+  var protocolIds = ['perfect_week']
+    .concat(PHASE_BADGES.map(function(b){return b.id;}))
+    .concat(DISC_BADGES.map(function(b){return b.id;}))
+    .concat(STREAK_BADGES.map(function(b){return b.id;}));
+
+  function cntE(ids){ return ids.filter(function(id){return !!earned[id];}).length; }
+  var totalEarned = cntE(healthIds.concat(fitnessIds).concat(protocolIds));
+
   var html = '';
 
-  // ── Badges section ──────────────────────────────────────────
-  html += '<div class="card">';
-  html += '<div class="ct">Badges</div>';
-
-  // Milestones group
-  html += '<div style="font-size:11px;color:var(--mu);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Milestones</div>';
-  html += '<div class="badge-grid">';
-  html += badgeItem('perfect_week', '💯', 'Perfect Week', earned['perfect_week']);
-  html += badgeItem('finisher_5k', '🏁', '5K Finisher', earned['finisher_5k']);
+  // Hero count
+  html += '<div class="ach-hero">';
+  html += '<div class="ach-hero-lbl">Badges Earned</div>';
+  html += '<div class="ach-hero-num">'+totalEarned+'</div>';
   html += '</div>';
 
-  // Mile Time — self-replacing: find highest earned tier
-  html += '<div style="font-size:11px;color:var(--mu);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:12px 0 8px">Mile Time</div>';
-  html += '<div class="badge-grid">';
-  var topMileTier = null;
-  MILE_TIERS.forEach(function(t){ if(earned[t.id]) topMileTier = t; });
-  var nextMileTier = null;
-  for (var i = 0; i < MILE_TIERS.length; i++) {
-    if (!earned[MILE_TIERS[i].id]) { nextMileTier = MILE_TIERS[i]; break; }
-  }
-  if (topMileTier) {
-    html += badgeItem(topMileTier.id, topMileTier.icon, topMileTier.name, true);
-  }
-  if (nextMileTier) {
-    html += badgeItem(nextMileTier.id, nextMileTier.icon, nextMileTier.name, false);
-  }
-  html += '</div>';
-
-  // Weekly Mileage — self-replacing
-  html += '<div style="font-size:11px;color:var(--mu);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:12px 0 8px">Weekly Mileage</div>';
-  html += '<div class="miles-log-row">';
-  html += '<input class="ach-inp" id="milesInp" type="number" step="0.1" placeholder="Log miles this week">';
-  html += '<button class="ach-log-btn" onclick="logWeekMiles()">Log</button>';
-  html += '</div>';
-  html += '<div class="badge-grid">';
-  var topMilesTier = null;
-  MILES_TIERS.forEach(function(t){ if(earned[t.id]) topMilesTier = t; });
-  var nextMilesTier = null;
-  for (var j = 0; j < MILES_TIERS.length; j++) {
-    if (!earned[MILES_TIERS[j].id]) { nextMilesTier = MILES_TIERS[j]; break; }
-  }
-  if (topMilesTier) {
-    html += badgeItem(topMilesTier.id, topMilesTier.icon, topMilesTier.name, true);
-  }
-  if (nextMilesTier) {
-    html += badgeItem(nextMilesTier.id, nextMilesTier.icon, nextMilesTier.name, false);
-  }
-  html += '</div>';
-
-  // Phase Completion
-  html += '<div style="font-size:11px;color:var(--mu);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:12px 0 8px">Phase Completion</div>';
-  html += '<div class="badge-grid">';
-  PHASE_BADGES.forEach(function(b) {
-    html += badgeItem(b.id, b.icon, b.name, !!earned[b.id]);
+  // Tab bar
+  html += '<div class="ach-tabs">';
+  [['health', cntE(healthIds)], ['fitness', cntE(fitnessIds)], ['protocol', cntE(protocolIds)]].forEach(function(pair) {
+    var tab = pair[0], cnt = pair[1];
+    var label = tab.charAt(0).toUpperCase() + tab.slice(1);
+    html += '<button class="ach-tab'+(tab===_achTab?' on':'')+'" onclick="selAchTab(\''+tab+'\')">'
+      + label+' ('+cnt+')</button>';
   });
   html += '</div>';
 
-  // Discipline
-  html += '<div style="font-size:11px;color:var(--mu);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:12px 0 8px">Discipline</div>';
-  html += '<div class="badge-grid">';
-  DISC_BADGES.forEach(function(b) {
-    html += badgeItem(b.id, b.icon, b.name, !!earned[b.id]);
-  });
-  html += '</div>';
+  // ── Health tab ───────────────────────────────────────────────
+  if (_achTab === 'health') {
+    html += '<div class="card">';
 
-  html += '</div>'; // end badges card
+    html += badgeSectionLabel('Skin');
+    html += renderBadgeGroup(SKIN_BADGES, earned,
+      function(b){ return b.desc; },
+      function(b) {
+        var c = b.keyword === 'SPF' ? spfCount : retinolCount;
+        return {cur:c, target:b.target, label:c+' / '+b.target+(b.target===1?' night':' days')};
+      }
+    );
 
-  // ── Race times section ──────────────────────────────────────
+    html += badgeSectionLabel('Hair');
+    html += renderBadgeGroup(HAIR_BADGES, earned,
+      function(b){ return b.desc; },
+      function(b) {
+        var c = b.keyword === 'Finasteride' ? finCount : minoxCount;
+        return {cur:c, target:b.target, label:c+' / '+b.target+' days'};
+      }
+    );
+
+    html += badgeSectionLabel('Biometrics');
+    html += renderBadgeGroup(BIO_BADGES, earned,
+      function(b){ return b.desc; },
+      null
+    );
+
+    html += '</div>';
+
+  // ── Fitness tab ──────────────────────────────────────────────
+  } else if (_achTab === 'fitness') {
+    html += '<div class="card">';
+
+    // Running: 5K Finisher
+    html += badgeSectionLabel('Running');
+    var fivekE = !!earned['finisher_5k'];
+    if (fivekE) html += badgeRow('🏁', '5K Finisher', 'Complete your first 5K race', true, null);
+
+    // Mile time tiers — all shown
+    var mileEarned = MILE_TIERS.filter(function(t){return !!earned[t.id];});
+    var mileLocked = MILE_TIERS.filter(function(t){return !earned[t.id];});
+    mileEarned.forEach(function(t){
+      html += badgeRow(t.icon, t.name, 'Run a mile in under '+secToTime(t.sec), true, null);
+    });
+    if ((mileEarned.length || fivekE) && (mileLocked.length || !fivekE)) html += badgeLockDivider();
+    mileLocked.forEach(function(t) {
+      var tIdx = MILE_TIERS.indexOf(t);
+      var prevSec = tIdx > 0 ? MILE_TIERS[tIdx-1].sec : 12*60;
+      var prog;
+      if (mileSec !== null) {
+        var range = Math.max(1, prevSec - t.sec);
+        var val = Math.max(0, Math.min(prevSec - mileSec, range));
+        prog = {cur:val, target:range, label:secToTime(mileSec)+' → Sub-'+Math.floor(t.sec/60)+':'+String(t.sec%60).padStart(2,'0')};
+      } else {
+        prog = {cur:0, target:1, label:'No PR logged → Sub-'+Math.floor(t.sec/60)+':'+String(t.sec%60).padStart(2,'0')};
+      }
+      html += badgeRow(t.icon, t.name, 'Run a mile in under '+secToTime(t.sec), false, prog);
+    });
+    if (!fivekE) html += badgeRow('🏁', '5K Finisher', 'Complete your first 5K race', false, null);
+
+    // Weekly Mileage
+    html += badgeSectionLabel('Weekly Mileage');
+    html += '<div class="miles-log-row"><input class="ach-inp" id="milesInp" type="number" step="0.1" placeholder="Log miles this week"><button class="ach-log-btn" onclick="logWeekMiles()">Log</button></div>';
+    var milesEarned = MILES_TIERS.filter(function(t){return !!earned[t.id];});
+    var milesLocked = MILES_TIERS.filter(function(t){return !earned[t.id];});
+    milesEarned.forEach(function(t){
+      html += badgeRow(t.icon, t.name, 'Log a week with '+t.miles+'+ miles', true, null);
+    });
+    if (milesEarned.length && milesLocked.length) html += badgeLockDivider();
+    milesLocked.forEach(function(t){
+      html += badgeRow(t.icon, t.name, 'Log a week with '+t.miles+'+ miles', false,
+        {cur:Math.min(maxMiles, t.miles), target:t.miles, label:maxMiles.toFixed(1)+' / '+t.miles+' miles'});
+    });
+
+    // Lifting: bench
+    html += badgeSectionLabel('Lifting');
+    html += renderBadgeGroup(BENCH_BADGES, earned,
+      function(b){ return b.desc; },
+      function(b) {
+        return benchVal > 0
+          ? {cur:Math.min(benchVal, b.minLbs), target:b.minLbs, label:benchVal+' / '+b.minLbs+' lbs'}
+          : {cur:0, target:b.minLbs, label:'0 / '+b.minLbs+' lbs'};
+      }
+    );
+    // Squat + other lifts
+    html += renderBadgeGroup(SQUAT_LIFT_BADGES, earned,
+      function(b){ return b.desc; },
+      function(b) {
+        if (b.id === 'squat_bw' || b.id === 'deadlift_first' || b.id === 'pullup_first') return null;
+        return squatVal > 0
+          ? {cur:Math.min(squatVal, b.minLbs), target:b.minLbs, label:squatVal+' / '+b.minLbs+' lbs'}
+          : {cur:0, target:b.minLbs, label:'0 / '+b.minLbs+' lbs'};
+      }
+    );
+
+    html += '</div>';
+
+  // ── Protocol tab ─────────────────────────────────────────────
+  } else {
+    html += '<div class="card">';
+
+    html += badgeSectionLabel('Milestones');
+    var pwE = !!earned['perfect_week'];
+    html += badgeRow('💯', 'Perfect Week', 'Complete 100% of all tasks in any single week', pwE, null);
+
+    html += badgeSectionLabel('Phase Completion');
+    html += renderBadgeGroup(PHASE_BADGES, earned,
+      function(b){ return 'Complete '+b.phaseEnd+' months of the protocol'; },
+      null
+    );
+
+    html += badgeSectionLabel('Discipline');
+    html += renderBadgeGroup(DISC_BADGES, earned,
+      function(b){ return b.months+' months on the protocol'; },
+      function(b) {
+        return {cur:Math.min(monthsElapsed, b.months), target:b.months, label:monthsElapsed+' / '+b.months+' months'};
+      }
+    );
+
+    html += badgeSectionLabel('Streaks');
+    html += renderBadgeGroup(STREAK_BADGES, earned,
+      function(b){ return b.desc; },
+      function(b) {
+        if (b.weeks) return {cur:Math.min(consecWeeks,b.weeks), target:b.weeks, label:consecWeeks+' / '+b.weeks+' weeks'};
+        return {cur:Math.min(sd.longest,b.days), target:b.days, label:sd.longest+' / '+b.days+' days'};
+      }
+    );
+
+    html += '</div>';
+  }
+
+  // ── Race times (always below tabs) ───────────────────────────
+  var ranks=['gold','silver','bronze'], rlbls=['#1','#2','#3'];
   ACH_DISTS.forEach(function(dist){
     var times=(ach[dist.k]||[]).slice(0,3);
     html+='<div class="card"><div class="ach-sec"><div class="ach-hdr"><span class="ach-icon">'+dist.icon+'</span><span class="ach-title">'+dist.l+'</span></div>';
@@ -235,14 +545,9 @@ function renderAchievements(){
     html+='<div class="ach-add"><input class="ach-inp" id="achInp-'+dist.k+'" placeholder="Log time (e.g. 24:32)" type="text"><button class="ach-log-btn" onclick="logAchievement(\''+dist.k+'\')">Log</button></div></div></div>';
   });
 
-  document.getElementById('achBody').innerHTML=html;
+  document.getElementById('achBody').innerHTML = html;
   ACH_DISTS.forEach(function(dist){var inp=document.getElementById('achInp-'+dist.k);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')logAchievement(dist.k);});});
   var milesInp=document.getElementById('milesInp');if(milesInp)milesInp.addEventListener('keydown',function(e){if(e.key==='Enter')logWeekMiles();});
-}
-
-function badgeItem(id, icon, name, isEarned) {
-  var cls = 'badge-item' + (isEarned ? ' earned' : ' locked');
-  return '<div class="'+cls+'"><div class="badge-emoji">'+icon+'</div><div class="badge-name">'+name+'</div></div>';
 }
 
 function logAchievement(k){
