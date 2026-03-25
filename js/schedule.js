@@ -38,7 +38,13 @@ function getSnack(gWeek, d) {
   var i=DAYS.indexOf(d);
   return(i%2===0?SH:SC)[(i+(gWeek-1))%7];
 }
-function getEvSnack(gWeek, d){return SE[(DAYS.indexOf(d)+gWeek)%7];}
+function getEvSnack(gWeek, d){
+  var pm=Math.floor((gWeek-1)/4)+1, wk=((gWeek-1)%4)+1;
+  var ds=getDateStringForDay(pm,wk,d);
+  if(ovr['evsn.actual.'+ds])return ovr['evsn.actual.'+ds];
+  if(ovr['evsn.'+gWeek+'.'+d])return ovr['evsn.'+gWeek+'.'+d];
+  return SE[(DAYS.indexOf(d)+gWeek)%7];
+}
 function satType(gWeek){return gWeek%2===0?'B':'A';}
 function globalWeek(){return(cProtoMonth-1)*4+cW;}
 function ckKey(d,i){return 'gw'+globalWeek()+d+i;}

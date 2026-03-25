@@ -16,9 +16,15 @@ function getSys(){
     +'SUPS: D3/K2, Omega-3, Ashwagandha, Creatine post-gym, Citrulline pre-gym, Mag PM.\n'
     +'SKIN: AM (cleanser,VitC,SPF) PM (cleanser,retinol,moisturizer).\n'
     +'For changes output JSON: ```json{"overrides":{"din.5":"grilled salmon"}}```\n'
-    +'TWO override types:\n'
-    +'  1) Date-scoped (one-time, today only): bf.actual.YYYY-MM-DD, din.actual.YYYY-MM-DD, lunch.actual.YYYY-MM-DD, sn.actual.YYYY-MM-DD\n'
-    +'  2) Rotation (permanent, repeating): bf.{globalWeek}.{Day}, din.{0-15}, monlunch, sn.{globalWeek}.{Day}\n'
+    +'TWO SNACK SLOTS: There are two separate snack tasks every day.\n'
+    +'  - MIDDAY SNACK (~3:30 PM on weekdays, ~1:00 PM on weekends): labeled "Snack:" in the schedule. Use keys: sn.actual.YYYY-MM-DD (one-time) or sn.{globalWeek}.{Day} (rotation).\n'
+    +'  - EVENING SNACK (~9:30 PM every day): labeled "Evening snack:" in the schedule. Use keys: evsn.actual.YYYY-MM-DD (one-time) or evsn.{globalWeek}.{Day} (rotation).\n'
+    +'  - If the user says "snack", "afternoon snack", or "daytime snack" → use sn.* keys.\n'
+    +'  - If the user says "evening snack", "night snack", or "pre-sleep snack" → use evsn.* keys.\n'
+    +'  - If the user just says "snack" and time of day is ambiguous, ask: "Did you mean your afternoon snack or your evening snack?"\n'
+    +'OVERRIDE TYPES:\n'
+    +'  1) Date-scoped (one-time, today only): bf.actual.YYYY-MM-DD, din.actual.YYYY-MM-DD, lunch.actual.YYYY-MM-DD, sn.actual.YYYY-MM-DD, evsn.actual.YYYY-MM-DD\n'
+    +'  2) Rotation (permanent, repeating): bf.{globalWeek}.{Day}, din.{0-15}, monlunch, sn.{globalWeek}.{Day}, evsn.{globalWeek}.{Day}\n'
     +'If user says "just for today" or describes a single meal change, use date-scoped key with today\'s date. If they want it going forward, use rotation key. When unclear, ask: "Just for today, or going forward?"\n'
     +'To RESTORE/REVERT a meal to its original planned value, output a JSON override with the key set to null. Example: ```json{"overrides":{"din.actual.'+today+'":null}}``` Setting a key to null deletes the override and the schedule falls back to the original rotation meal.\n'
     +'Other keys: m.{protoMonth}.{run|ret|wt|rd|label|hl}, m.{protoMonth}.rn (array), wo.{Mon|Tue|Fri|SatA|SatB}.\n'
@@ -71,7 +77,7 @@ function sendMsg(){
     if(data.error){addBubble('a','Error: '+data.error.message);btn.disabled=false;return;}
     var full=(data.content||[]).map(function(b){return b.text||'';}).join('');
     var jm=full.match(/```json\s*([\s\S]*?)```/);
-    if(jm){try{var parsed=JSON.parse(jm[1].trim());if(parsed.overrides){var dk=todayKey();Object.keys(parsed.overrides).forEach(function(k){var v=parsed.overrides[k];if(v===null){delete ovr[k];}else{ovr[k]=v;var am=k.match(/^(bf|din|lunch|sn)\.actual\.(.+)$/);if(am&&am[2]===dk)_correctMacroForActualOverride(am[1],v);}});}}catch(e){}}
+    if(jm){try{var parsed=JSON.parse(jm[1].trim());if(parsed.overrides){var dk=todayKey();Object.keys(parsed.overrides).forEach(function(k){var v=parsed.overrides[k];if(v===null){delete ovr[k];}else{ovr[k]=v;var am=k.match(/^(bf|din|lunch|sn|evsn)\.actual\.(.+)$/);if(am&&am[2]===dk)_correctMacroForActualOverride(am[1],v);}});}}catch(e){}}
     var clean=full.replace(/```json[\s\S]*?```/g,'').trim();
     addBubble('a',clean);
     chatHist.push({role:'assistant',content:full});

@@ -6,9 +6,9 @@ var TAGS = {nutrition:'nu',gym:'gy',skincare:'sk',supplement:'su',hair:'ha',card
 var PROTO_START = new Date(2026,2,9); // March 9 2026
 
 // Override key reference:
-//   Rotation overrides  : bf.{gWeek}.{Day}  din.{0-15}  sn.{gWeek}.{Day}  monlunch
+//   Rotation overrides  : bf.{gWeek}.{Day}  din.{0-15}  sn.{gWeek}.{Day}  evsn.{gWeek}.{Day}  monlunch
 //   Date-scoped (1-time): bf.actual.{YYYY-MM-DD}  din.actual.{YYYY-MM-DD}
-//                         lunch.actual.{YYYY-MM-DD}  sn.actual.{YYYY-MM-DD}
+//                         lunch.actual.{YYYY-MM-DD}  sn.actual.{YYYY-MM-DD}  evsn.actual.{YYYY-MM-DD}
 //   Other               : m.{month}.{key}  wo.{Mon|Tue|Fri|SatA|SatB}
 
 // Returns YYYY-MM-DD string for a given protocol month/week/day combination
