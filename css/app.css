@@ -20,7 +20,7 @@ textarea,input{font-family:var(--fb)}
 .hdr-in{display:flex;justify-content:space-between;align-items:center;padding:14px 0 12px;border-bottom:1px solid var(--b)}
 .ey{font-size:11px;letter-spacing:.18em;color:var(--mu);text-transform:uppercase;font-weight:500;margin-bottom:2px}
 .ttl{font-family:var(--fd);font-size:26px;font-weight:600;color:var(--t);line-height:1}
-#dock{flex-shrink:0;background:var(--dk);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-top:1px solid var(--b);padding:10px 0 env(safe-area-inset-bottom,10px);display:flex;justify-content:space-around;align-items:center;z-index:50}
+#dock{flex-shrink:0;background:var(--dk);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-top:1px solid var(--b);padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-around;align-items:center;z-index:50}
 .db{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;flex:1}
 .db:active{transform:scale(.9)}
 .di{font-size:20px;transition:color var(--tr)}
