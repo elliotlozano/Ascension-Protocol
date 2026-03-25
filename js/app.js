@@ -114,13 +114,3 @@ document.getElementById('loginPass').addEventListener('keydown',function(ev){
 initSwipeBack();
 
 if(authToken){launchApp();}else{showLoginScreen();}
-
-// ── PWA standalone dock padding ────────────────────────────────
-function applyStandaloneDockPadding(){
-  if(navigator.standalone){
-    var dock=document.getElementById('dock');
-    if(dock)dock.style.paddingBottom='env(safe-area-inset-bottom,0px)';
-  }
-}
-applyStandaloneDockPadding();
-window.addEventListener('load',applyStandaloneDockPadding);
