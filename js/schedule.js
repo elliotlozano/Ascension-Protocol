@@ -102,7 +102,7 @@ function buildSchedule(day, protoMonth, gWeek) {
   }
   if(['Monday','Tuesday','Wednesday','Thursday'].indexOf(day)!==-1){
     var dn=getDinner(gWeek,day);
-    if(dn){t.push({time:'7:15 PM',task:'Start dinner (~30 min)',tag:'nutrition'});t.push({time:'7:45 PM',task:'Dinner: '+dn,tag:'nutrition'});}
+    if(dn){t.push({time:'7:45 PM',task:'Dinner: '+dn,tag:'nutrition'});}
   }
   if(day==='Friday')t.push({time:'7:30 PM', task:'Date night — eat out freely', tag:'nutrition'});
   t.push({time:'9:00 PM', task:retStr, tag:'skincare'});

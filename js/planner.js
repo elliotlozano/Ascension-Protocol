@@ -153,18 +153,9 @@ function toggleTask(i){
   if(t&&t.tag==='nutrition'){
     var dk=todayKey();
     if(chk[k]){
-      // Checking on: log macro entry
-      if(t.task.toLowerCase().indexOf('water')!==-1){
-        // Water task: log with zero macros, no AI call
-        var wday=getMacroDay(dk);
-        var wAlready=false;
-        for(var wi=0;wi<wday.meals.length;wi++){if(wday.meals[wi].name.toLowerCase()===t.task.toLowerCase()){wAlready=true;break;}}
-        if(!wAlready){
-          wday.meals.push({name:t.task,cal:0,protein:0,carbs:0,fat:0});
-          localStorage.setItem('ac_macros',JSON.stringify(macros));
-        }
-        if(document.getElementById('pageMacros').classList.contains('on'))renderMacroToday();
-      } else {
+      // Checking on: log macro entry (skip water/drink tasks entirely)
+      var tl=t.task.toLowerCase();
+      if(tl.indexOf('water')===-1&&tl.indexOf('drink')===-1){
         logMealMacro(t.task);
       }
     } else {
