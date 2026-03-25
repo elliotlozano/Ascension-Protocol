@@ -146,7 +146,9 @@ function renderPlanner() {
 function selProtoMonth(m){cProtoMonth=m;renderPlanner();}
 function selWeek(w){cW=w;renderPlanner();}
 function selDay(d){cD=d;renderPlanner();}
+var _lastToggleTime = 0;
 function toggleTask(i){
+  var now=Date.now();if(now-_lastToggleTime<300)return;_lastToggleTime=now;
   var k=ckKey(cD,i);chk[k]=!chk[k];
   var ts=buildSchedule(cD,cProtoMonth,globalWeek());
   var t=ts[i];

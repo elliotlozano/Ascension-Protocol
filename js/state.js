@@ -94,17 +94,20 @@ function sbRefresh(cb){
 }
 
 function setSyncUI(s){var map={ok:'✦ Synced',saving:'↑ Saving…',err:'⚠ Offline',loading:'↓ Loading…'};var col={ok:'var(--sg)',saving:'var(--a)',err:'#c0504a',loading:'var(--a)'};var el=document.getElementById('syncStatus');if(el){el.textContent=map[s]||'';el.style.color=col[s]||'var(--mu)';}}
+var _syncing = false;
 function sbWrite(){
   if(!authToken)return;
   clearTimeout(syncTimer);
   syncTimer=setTimeout(function(){
     setSyncUI('saving');
     function doWrite(retry){
+      _syncing=true;
       fetch(SB_URL+'/rest/v1/user_data?on_conflict=user_id',{method:'POST',headers:Object.assign(authHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({user_id:authUserId,chk:chk,ovr:ovr,bio:bio,prs:prs,ach:ach,glc:glc,goals:goals,mission:mission,chat:chatHist,wscores:weekScores,wmiles:weekMiles,badges:earnedBadges,macros:macros,macro_cache:macroCache,updated_at:new Date().toISOString()})})
       .then(function(r){
-        if(r.status===401&&retry){sbRefresh(function(err){if(!err)doWrite(false);else setSyncUI('err');});return;}
+        if(r.status===401&&retry){sbRefresh(function(err){if(!err)doWrite(false);else{_syncing=false;setSyncUI('err');}});return;}
+        _syncing=false;
         setSyncUI(r.ok?'ok':'err');
-      }).catch(function(){setSyncUI('err');});
+      }).catch(function(){_syncing=false;setSyncUI('err');});
     }
     doWrite(true);
   },800);
@@ -164,7 +167,7 @@ function startRealtimeSync(){
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'user_data'},function(payload){
       var d=payload.new;
       if(!d||d.user_id!==authUserId)return;  // ignore other users' rows
-      if(d.chk)   {chk=d.chk;            localStorage.setItem('ac_chk',     JSON.stringify(chk));}
+      if(d.chk&&!_syncing){chk=d.chk;    localStorage.setItem('ac_chk',     JSON.stringify(chk));}
       if(d.ovr)   {ovr=d.ovr;            localStorage.setItem('ac_ovr',     JSON.stringify(ovr));}
       if(d.bio)   {bio=d.bio;            localStorage.setItem('ac_bio',     JSON.stringify(bio));}
       if(d.prs)   {prs=d.prs;            localStorage.setItem('ac_prs',     JSON.stringify(prs));}
