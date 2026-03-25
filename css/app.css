@@ -438,3 +438,7 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .mom-stat-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:6px}
 .mom-stat-val{font-family:var(--fd);font-size:22px;font-weight:600;color:var(--a);line-height:1.1}
 .mom-hist-empty{font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:28px 0;line-height:1.6}
+
+@media (display-mode: standalone){
+  #dock{padding-bottom:env(safe-area-inset-bottom,0px)}
+}
