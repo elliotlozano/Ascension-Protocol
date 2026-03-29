@@ -2,7 +2,7 @@
 
 var BIOF=[{k:'weight',l:'Weight',u:'lbs'},{k:'bodyfat',l:'Body Fat',u:'%'},{k:'waist',l:'Waist',u:'in'},{k:'chest',l:'Chest',u:'in'},{k:'shoulders',l:'Shoulders',u:'in'},{k:'bicep',l:'Bicep',u:'in'}];
 var LIFTS=[{k:'squat',l:'Back Squat'},{k:'bench',l:'Bench Press'},{k:'deadlift',l:'Deadlift'},{k:'ohp',l:'Overhead Press'},{k:'row',l:'Barbell Row'},{k:'pullup',l:'Weighted Pull-up'}];
-var RUNS=[{k:'mile',l:'1 Mile'},{k:'fivek',l:'5K'},{k:'run30',l:'30-min dist'}];
+var RUNS=[{k:'mile',l:'1 Mile'},{k:'twomile',l:'2 Mile'},{k:'fivek',l:'5K'},{k:'run30',l:'30-min dist'}];
 
 var _bioTab='weight';
 var _bioSwipedRow=null;
@@ -33,14 +33,30 @@ function renderMetrics(){
   });
   document.getElementById('bioCard').innerHTML=bcHtml;
 
-  var lHtml='';LIFTS.forEach(function(lf){var pr=prs[lf.k];lHtml+='<div class="pr-row"><div><div class="pr-name">'+lf.l+'</div>'+(pr?'<div class="pr-date">'+pr.d+'</div>':'')+'</div><div style="text-align:right"><div class="pr-val">'+(pr?pr.v+' lbs':'—')+'</div><div class="pr-inp-row" id="prrow-'+lf.k+'"><input class="inp" id="prin-'+lf.k+'" type="number" placeholder="lbs" style="width:80px;text-align:right"><button class="ok-btn" onclick="savePR(\''+lf.k+'\',\'lift\')">✓</button></div><button class="pr-btn" onclick="togglePRInput(\''+lf.k+'\')">'+(pr?'✎':'+')+'</button></div></div>';});
+  var lHtml='';LIFTS.forEach(function(lf){var pr=prs[lf.k];lHtml+='<div class="pr-row"><div><div class="pr-name">'+lf.l+'</div>'+(pr?'<div class="pr-date">'+pr.d+'</div>':'')+'</div><div style="text-align:right"><div class="pr-val">'+(pr?pr.v+' lbs':'—')+'</div><div class="pr-inp-row" id="prrow-'+lf.k+'"><input class="inp" id="prin-'+lf.k+'" type="number" placeholder="lbs" style="width:80px;text-align:right"><button class="ok-btn" onclick="savePR(\''+lf.k+'\',\'lift\')">✓</button></div><button class="pr-btn" onclick="togglePRInput(\''+lf.k+'\')">+</button></div></div>';});
   document.getElementById('liftPRs').innerHTML=lHtml;
-  var rHtml='';RUNS.forEach(function(r){var pr=prs[r.k];rHtml+='<div class="pr-row"><div><div class="pr-name">'+r.l+'</div>'+(pr?'<div class="pr-date">'+pr.d+'</div>':'')+'</div><div style="text-align:right"><div class="pr-val">'+(pr?pr.v:'—')+'</div><div class="pr-inp-row" id="prrow-'+r.k+'"><input class="inp" id="prin-'+r.k+'" type="text" placeholder="MM:SS" style="width:90px;text-align:right"><button class="ok-btn" onclick="savePR(\''+r.k+'\',\'run\')">✓</button></div><button class="pr-btn" onclick="togglePRInput(\''+r.k+'\')">'+(pr?'✎':'+')+'</button></div></div>';});
+  var rHtml='';RUNS.forEach(function(r){var pr=prs[r.k];rHtml+='<div class="pr-row"><div><div class="pr-name">'+r.l+'</div>'+(pr?'<div class="pr-date">'+pr.d+'</div>':'')+'</div><div style="text-align:right"><div class="pr-val">'+(pr?pr.v:'—')+'</div><div class="pr-inp-row" id="prrow-'+r.k+'"><input class="inp" id="prin-'+r.k+'" type="text" placeholder="MM:SS" style="width:90px;text-align:right"><button class="ok-btn" onclick="savePR(\''+r.k+'\',\'run\')">✓</button></div><button class="pr-btn" onclick="togglePRInput(\''+r.k+'\')">+</button></div></div>';});
   document.getElementById('runPRs').innerHTML=rHtml;
+  _attachPRInputListeners();
 }
 
-function togglePRInput(k){var row=document.getElementById('prrow-'+k);if(row)row.classList.toggle('open');var inp=document.getElementById('prin-'+k);if(inp&&row.classList.contains('open'))inp.focus();}
+function togglePRInput(k){
+  var row=document.getElementById('prrow-'+k);if(!row)return;
+  var isOpen=row.classList.contains('open');
+  if(isOpen){row.classList.remove('open');}
+  else{row.classList.add('open');var inp=document.getElementById('prin-'+k);if(inp)inp.focus();}
+}
 function savePR(k,type){var inp=document.getElementById('prin-'+k);if(!inp||!inp.value.trim())return;prs[k]={v:inp.value.trim(),d:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})};save();renderMetrics();var row=document.getElementById('prrow-'+k);if(row)showSavedFlash(row,'✓ PR saved');}
+function _attachPRInputListeners(){
+  LIFTS.concat(RUNS).forEach(function(item){
+    var inp=document.getElementById('prin-'+item.k);
+    var row=document.getElementById('prrow-'+item.k);
+    if(inp&&row){
+      inp.addEventListener('keydown',function(e){if(e.key==='Enter')savePR(item.k,LIFTS.indexOf(item)!==-1?'lift':'run');});
+      inp.addEventListener('blur',function(){setTimeout(function(){if(row.classList)row.classList.remove('open');},150);});
+    }
+  });
+}
 
 // ── Biometrics sub-page ────────────────────────────────────────────────────
 

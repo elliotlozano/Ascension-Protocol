@@ -3,41 +3,6 @@
 var _glSwipedRow = null;
 function _glSnapBack(){if(_glSwipedRow){_glSwipedRow.style.transform='';_glSwipedRow=null;}}
 
-var _achSwipedRow = null;
-function _achSnapBack(){if(_achSwipedRow){_achSwipedRow.style.transform='';_achSwipedRow=null;}}
-function attachAchSwipe(k,i){
-  var row=document.getElementById('achrow-'+k+'-'+i);if(!row)return;
-  var tx=0,ty=0;
-  row.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
-  row.addEventListener('touchend',function(e){
-    var dx=e.changedTouches[0].clientX-tx;
-    var dy=Math.abs(e.changedTouches[0].clientY-ty);
-    if(dy>Math.abs(dx)||Math.abs(dx)<8)return;
-    if(dx<-40){if(_achSwipedRow&&_achSwipedRow!==row){_achSwipedRow.style.transform='';}row.style.transform='translateX(-80px)';_achSwipedRow=row;}
-    else if(dx>20&&_achSwipedRow===row){_achSnapBack();}
-  },{passive:true});
-}
-function deleteAchTime(k,i){
-  _achSnapBack();
-  if(ach[k])ach[k].splice(i,1);
-  save();renderAchievements();
-}
-function editAchTime(k,i,el){
-  if(_achSwipedRow){_achSnapBack();return;}
-  if(!ach[k]||!ach[k][i])return;
-  var current=el.textContent;
-  var inp=document.createElement('input');inp.className='gl-edit-inp';inp.value=current;inp.placeholder='e.g. 24:32';inp.style.width='90px';inp.style.fontSize='14px';
-  var committed=false;
-  function commit(){
-    if(committed)return;committed=true;
-    var val=inp.value.trim();
-    if(val&&val!==current){ach[k][i].v=val;ach[k].sort(function(a,b){return timeToSec(a.v)-timeToSec(b.v);});save();}
-    renderAchievements();
-  }
-  inp.addEventListener('blur',commit);
-  inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){e.preventDefault();committed=true;renderAchievements();}});
-  el.parentNode.replaceChild(inp,el);inp.focus();inp.select();
-}
 
 
 // Feature 7: Nizoral removed — only Finasteride and Dutasteride remain
@@ -107,7 +72,6 @@ var GUIDE_DATA = {
   }
 };
 
-var ACH_DISTS=[{k:'mile',l:'1 Mile',icon:'🏃'},{k:'fivek',l:'5K',icon:'🏅'},{k:'tenk',l:'10K',icon:'🏆'}];
 
 // ── Badge definitions ─────────────────────────────────────────
 // FITNESS: Mile time tiers
@@ -478,26 +442,26 @@ function renderAchievements() {
     var fivekE = !!earned['finisher_5k'];
     if (fivekE) html += badgeRow('🏁', '5K Finisher', 'Complete your first 5K race', true, null);
 
-    // Mile time tiers — all shown
+    // Mile time tiers — only highest earned + next locked target
     var mileEarned = MILE_TIERS.filter(function(t){return !!earned[t.id];});
     var mileLocked = MILE_TIERS.filter(function(t){return !earned[t.id];});
-    mileEarned.forEach(function(t){
-      html += badgeRow(t.icon, t.name, 'Run a mile in under '+secToTime(t.sec), true, null);
-    });
-    if ((mileEarned.length || fivekE) && (mileLocked.length || !fivekE)) html += badgeLockDivider();
-    mileLocked.forEach(function(t) {
-      var tIdx = MILE_TIERS.indexOf(t);
+    var topEarned = mileEarned.length ? mileEarned[mileEarned.length-1] : null;
+    var nextLocked = mileLocked.length ? mileLocked[0] : null;
+    if (topEarned) html += badgeRow(topEarned.icon, topEarned.name, 'Run a mile in under '+secToTime(topEarned.sec), true, null);
+    if ((topEarned || fivekE) && (nextLocked || !fivekE)) html += badgeLockDivider();
+    if (nextLocked) {
+      var tIdx = MILE_TIERS.indexOf(nextLocked);
       var prevSec = tIdx > 0 ? MILE_TIERS[tIdx-1].sec : 12*60;
       var prog;
       if (mileSec !== null) {
-        var range = Math.max(1, prevSec - t.sec);
+        var range = Math.max(1, prevSec - nextLocked.sec);
         var val = Math.max(0, Math.min(prevSec - mileSec, range));
-        prog = {cur:val, target:range, label:secToTime(mileSec)+' → Sub-'+Math.floor(t.sec/60)+':'+String(t.sec%60).padStart(2,'0')};
+        prog = {cur:val, target:range, label:secToTime(mileSec)+' → Sub-'+Math.floor(nextLocked.sec/60)+':'+String(nextLocked.sec%60).padStart(2,'0')};
       } else {
-        prog = {cur:0, target:1, label:'No PR logged → Sub-'+Math.floor(t.sec/60)+':'+String(t.sec%60).padStart(2,'0')};
+        prog = {cur:0, target:1, label:'No PR logged → Sub-'+Math.floor(nextLocked.sec/60)+':'+String(nextLocked.sec%60).padStart(2,'0')};
       }
-      html += badgeRow(t.icon, t.name, 'Run a mile in under '+secToTime(t.sec), false, prog);
-    });
+      html += badgeRow(nextLocked.icon, nextLocked.name, 'Run a mile in under '+secToTime(nextLocked.sec), false, prog);
+    }
     if (!fivekE) html += badgeRow('🏁', '5K Finisher', 'Complete your first 5K race', false, null);
 
     // Weekly Mileage
@@ -571,41 +535,10 @@ function renderAchievements() {
     html += '</div>';
   }
 
-  // ── Race times (always below tabs) ───────────────────────────
-  var ranks=['gold','silver','bronze'], rlbls=['#1','#2','#3'];
-  ACH_DISTS.forEach(function(dist){
-    var times=(ach[dist.k]||[]).slice(0,3);
-    html+='<div class="card"><div class="ach-sec"><div class="ach-hdr"><span class="ach-icon">'+dist.icon+'</span><span class="ach-title">'+dist.l+'</span></div>';
-    if(!times.length)html+='<div style="font-size:13px;color:var(--mu);font-style:italic;padding:4px 0 8px">No times logged yet.</div>';
-    times.forEach(function(entry,i){
-      html+='<div class="ach-swipe-wrap">'
-        +'<button class="ach-del-reveal-btn" onclick="deleteAchTime(\''+dist.k+'\','+i+')">Delete</button>'
-        +'<div class="ach-row" id="achrow-'+dist.k+'-'+i+'">'
-        +'<span class="ach-rank '+ranks[i]+'">'+rlbls[i]+'</span>'
-        +'<span class="ach-time" onclick="editAchTime(\''+dist.k+'\','+i+',this)" style="cursor:text">'+entry.v+'</span>'
-        +'<span class="ach-date">'+entry.d+'</span>'
-        +'</div></div>';
-    });
-    html+='<div class="ach-add"><input class="ach-inp" id="achInp-'+dist.k+'" placeholder="Log time (e.g. 24:32)" type="text"><button class="ach-log-btn" onclick="logAchievement(\''+dist.k+'\')">Log</button></div></div></div>';
-  });
-
   document.getElementById('achBody').innerHTML = html;
-  ACH_DISTS.forEach(function(dist){
-    var inp=document.getElementById('achInp-'+dist.k);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')logAchievement(dist.k);});
-    (ach[dist.k]||[]).slice(0,3).forEach(function(_,i){attachAchSwipe(dist.k,i);});
-  });
   var milesInp=document.getElementById('milesInp');if(milesInp)milesInp.addEventListener('keydown',function(e){if(e.key==='Enter')logWeekMiles();});
 }
 
-function logAchievement(k){
-  var inp=document.getElementById('achInp-'+k);if(!inp)return;
-  var v=inp.value.trim();if(!v)return;
-  if(!ach[k])ach[k]=[];
-  ach[k].unshift({v:v,d:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
-  ach[k].sort(function(a,b){return timeToSec(a.v)-timeToSec(b.v);});
-  ach[k]=ach[k].slice(0,3);
-  inp.value='';save();renderAchievements();
-}
 
 function logWeekMiles() {
   var inp = document.getElementById('milesInp');
@@ -660,9 +593,6 @@ function _renderGroceryBody(){
     var unchecked=[],checked=[];
     allItems.forEach(function(obj){if(glc[obj.key])checked.push(obj);else unchecked.push(obj);});
     html+='<div class="gl-sec"><div class="gl-sh">'+labels[cat]+'</div>';
-    if(!allItems.length){
-      html+='<div style="color:var(--mu);font-size:13px;padding:6px 2px 8px">Tap + to add items.</div>';
-    }
     unchecked.forEach(function(obj){
       var sk=obj.key.replace(/\./g,'-');
       html+='<div class="gl-item-wrap">'

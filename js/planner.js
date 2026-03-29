@@ -113,8 +113,6 @@ function renderPlanner() {
   document.getElementById('dayPct').style.color=pct===100?'var(--sg)':meta.hl;
   document.getElementById('dayCnt').textContent=dc+'/'+tasks.length+' tasks';
   var pf=document.getElementById('progFill');pf.style.width=pct+'%';pf.style.background=pct===100?'var(--sg)':meta.hl;
-  document.getElementById('resetBtn').style.display=dc>0?'inline':'none';
-
   // Task list
   var chkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4L3.5 6.5L9 1"/></svg>';
   var tlHtml='';
@@ -146,9 +144,9 @@ function renderPlanner() {
 function selProtoMonth(m){cProtoMonth=m;renderPlanner();}
 function selWeek(w){cW=w;renderPlanner();}
 function selDay(d){cD=d;renderPlanner();}
-var _lastToggleTime = 0;
+var _lastToggleTime = {};
 function toggleTask(i){
-  var now=Date.now();if(now-_lastToggleTime<400)return;_lastToggleTime=now;
+  var now=Date.now();if(_lastToggleTime[i]&&now-_lastToggleTime[i]<50)return;_lastToggleTime[i]=now;
   var k=ckKey(cD,i);chk[k]=!chk[k];
   var ts=buildSchedule(cD,cProtoMonth,globalWeek());
   var t=ts[i];
@@ -178,7 +176,6 @@ function toggleTask(i){
   }
   save();renderPlanner();
 }
-function resetDay(){var ts=buildSchedule(cD,cProtoMonth,globalWeek());ts.forEach(function(_,i){delete chk[ckKey(cD,i)];});save();renderPlanner();}
 
 function toggleBanner(){
   var open=localStorage.getItem('ac_banner_open')==='true';
