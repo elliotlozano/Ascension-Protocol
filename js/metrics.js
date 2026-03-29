@@ -47,6 +47,7 @@ function togglePRInput(k){
   else{row.classList.add('open');var inp=document.getElementById('prin-'+k);if(inp)inp.focus();}
 }
 function savePR(k,type){var inp=document.getElementById('prin-'+k);if(!inp||!inp.value.trim())return;prs[k]={v:inp.value.trim(),d:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})};save();renderMetrics();var row=document.getElementById('prrow-'+k);if(row)showSavedFlash(row,'✓ PR saved');}
+var _prTouchListenerAttached = false;
 function _attachPRInputListeners(){
   LIFTS.concat(RUNS).forEach(function(item){
     var inp=document.getElementById('prin-'+item.k);
@@ -56,6 +57,16 @@ function _attachPRInputListeners(){
       inp.addEventListener('blur',function(){setTimeout(function(){if(row.classList)row.classList.remove('open');},150);});
     }
   });
+  if(!_prTouchListenerAttached){
+    _prTouchListenerAttached=true;
+    document.addEventListener('touchstart',function(e){
+      var openRows=document.querySelectorAll('.pr-inp-row.open');
+      if(!openRows.length)return;
+      openRows.forEach(function(row){
+        if(!row.contains(e.target)){row.classList.remove('open');}
+      });
+    },{passive:true});
+  }
 }
 
 // ── Biometrics sub-page ────────────────────────────────────────────────────
