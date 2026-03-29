@@ -113,4 +113,15 @@ document.getElementById('loginPass').addEventListener('keydown',function(ev){
 
 initSwipeBack();
 
+// ── Global touch listener (closes open inline edit inputs on outside tap) ──
+var _globalTouchListenerAttached=false;
+(function(){
+  if(_globalTouchListenerAttached)return;
+  _globalTouchListenerAttached=true;
+  document.addEventListener('touchstart',function(e){
+    var editInp=document.querySelector('.gl-edit-inp');
+    if(editInp&&!editInp.contains(e.target))editInp.blur();
+  },{passive:true});
+})();
+
 if(authToken){launchApp();}else{showLoginScreen();}

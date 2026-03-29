@@ -141,6 +141,7 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .goal-body.open{display:block}
 .goal-field{margin-bottom:12px}
 .goal-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:4px}
+.goal-body .goal-label{color:var(--a)}
 .goal-value{font-size:14px;color:var(--t2);line-height:1.6}
 .goal-plan{font-size:13px;color:var(--t2);line-height:1.7;white-space:pre-wrap}
 .gen-btn{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--as);border:1.5px solid var(--am);border-radius:10px;color:var(--a);font-size:13px;font-weight:700;margin-top:4px}
@@ -456,3 +457,29 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .mom-stat-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:6px}
 .mom-stat-val{font-family:var(--fd);font-size:22px;font-weight:600;color:var(--a);line-height:1.1}
 .mom-hist-empty{font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:28px 0;line-height:1.6}
+
+/* ── PR overhaul ── */
+.pr-ex-row{display:flex;flex-direction:column;border-bottom:1px solid var(--b);padding:0}
+.pr-ex-row:last-child{border-bottom:none}
+.pr-ex-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer}
+.pr-ex-body{border-top:1px solid var(--b);padding:4px 0}
+.pr-entry-wrap{position:relative;overflow:hidden}
+.pr-del-btn{position:absolute;right:0;top:0;bottom:0;width:80px;background:#c0504a;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:0}
+.pr-entry-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;background:var(--s);position:relative;z-index:1;transition:transform .25s ease}
+.pr-entry-val{font-family:var(--fd);font-size:17px;font-weight:600;color:var(--a)}
+.pr-entry-date{font-size:11px;color:var(--mu);font-weight:500}
+.pr-add-row{display:flex;align-items:center;gap:8px;padding:8px 0}
+.pr-add-btn{font-size:13px;color:var(--a);font-weight:700;padding:5px 0}
+
+/* ── Goal form pills & emoji ── */
+.gf-pill-row{display:flex;gap:6px;flex-wrap:wrap}
+.gf-pill-scroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.gf-pill-scroll::-webkit-scrollbar{display:none}
+.gf-pill{padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--s2);color:var(--mu);border:1px solid var(--b);flex-shrink:0;transition:all var(--tr);cursor:pointer}
+.gf-pill.on{background:var(--a);color:#1c1c1e;border-color:var(--a)}
+.gf-emoji-btn{font-size:22px;padding:6px 10px;background:var(--s2);border-radius:10px;border:1.5px solid var(--b2);line-height:1;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color var(--tr)}
+.gf-emoji-btn:active{border-color:var(--a)}
+.gf-emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:8px;max-height:120px;overflow-y:auto}
+.gf-emoji-opt{font-size:20px;padding:6px;border-radius:8px;text-align:center;cursor:pointer;transition:background var(--tr)}
+.gf-emoji-opt:active,.gf-emoji-opt.on{background:var(--as)}
+.gf-pace-display{font-size:13px;font-weight:600;color:var(--a);padding:5px 0}

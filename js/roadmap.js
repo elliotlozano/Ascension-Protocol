@@ -166,26 +166,152 @@ function saveMission(){
 }
 
 // ── Goal form ──────────────────────────────────────────────────────────────
-function calcWeeksOut(){
-  var dateVal=document.getElementById('gfDate').value;
-  var disp=document.getElementById('gfWeeksDisplay');
-  if(!dateVal){disp.textContent='—';return;}
-  var race=new Date(dateVal+'T12:00:00');
-  var now=new Date();
-  var diff=Math.round((race-now)/(7*86400000));
-  if(diff<=0){disp.textContent='Past date';disp.style.color='#c0504a';}
-  else{disp.textContent=diff+' week'+(diff===1?'':'s')+' away';disp.style.color='var(--a)';}
+
+var GF_EMOJI_LIST=['🎯','🏃','💪','🏋️','⚡','🔥','🏆','🥇','🎖️','🌟','💎','🚀','🦾','🏅','⭐','🌙','🎪','🎨','🏔️','🌊','🦅','🐉','👑','💯'];
+var GF_DIST_OPTIONS=['1 Mile','2 Mile','5K','10K','Half Marathon','Marathon'];
+var GF_PROTO_OPTIONS=['Training','Nutrition','Recovery','Skin','Mental'];
+var GF_WEIGHT_OPTIONS=(function(){var a=[];for(var w=50;w<=500;w+=5)a.push(w);return a;})();
+var GF_BIO_UNITS={weight:'lbs',bodyfat:'%',waist:'in',chest:'in',shoulders:'in',bicep:'in'};
+
+var _gfState={type:'Running',name:'',date:'',emoji:'',emojiPickerOpen:false,
+  distance:'',targetTime:'',liftType:'',targetWeight:'',
+  bioType:'',targetValue:'',subProtocol:'',adjustment:''};
+
+function _gfSaveState(){
+  var n=document.getElementById('gfName');if(n)_gfState.name=n.value;
+  var d=document.getElementById('gfDate');if(d)_gfState.date=d.value;
+  var tt=document.getElementById('gfTargetTime');if(tt)_gfState.targetTime=tt.value;
+  var tv=document.getElementById('gfTargetVal');if(tv)_gfState.targetValue=tv.value;
+  var adj=document.getElementById('gfAdjustment');if(adj)_gfState.adjustment=adj.value;
 }
-function openGoalForm(){document.getElementById('goalForm').classList.add('open');document.getElementById('gfName').focus();}
+
+function _calcPace(distance,time){
+  var milesMap={'1 Mile':1,'2 Mile':2,'5K':3.1,'10K':6.2,'Half Marathon':13.1,'Marathon':26.2};
+  var miles=milesMap[distance]||0;
+  if(!miles||!time)return'';
+  var parts=time.split(':').map(Number);
+  var totalMin;
+  if(parts.length===3)totalMin=parts[0]*60+parts[1]+parts[2]/60;
+  else if(parts.length===2)totalMin=parts[0]+parts[1]/60;
+  else return'';
+  if(isNaN(totalMin)||totalMin<=0)return'';
+  var pace=totalMin/miles;
+  var m=Math.floor(pace),s=Math.round((pace-m)*60);
+  if(s===60){m++;s=0;}
+  return m+':'+(s<10?'0':'')+s+' /mi';
+}
+
+function _updatePaceDisplay(){
+  var el=document.getElementById('gfPaceDisplay');if(!el)return;
+  var pace=_calcPace(_gfState.distance,_gfState.targetTime);
+  el.textContent=pace?pace+' pace':'';
+  el.style.display=pace?'block':'none';
+}
+
+function renderGoalForm(){
+  var el=document.getElementById('goalForm');if(!el)return;
+
+  var typeHtml='<div class="gf-row"><div class="gf-label">Type</div><div class="gf-pill-row">'
+    +['Running','Lifting','Biometrics','Protocol'].map(function(t){
+      return'<button class="gf-pill'+(_gfState.type===t?' on':'')+'" onclick="_gfSaveState();_gfState.type=\''+t+'\';renderGoalForm()">'+t+'</button>';
+    }).join('')+'</div></div>';
+
+  var nameHtml='<div class="gf-row"><div class="gf-label">Goal Name</div>'
+    +'<input class="gf-inp" id="gfName" placeholder="e.g. Downtown 5K" autocomplete="off" value="'+escHtml(_gfState.name)+'"></div>';
+
+  var dateWeeksHtml='';
+  if(_gfState.date){
+    var diff2=Math.round((new Date(_gfState.date+'T12:00:00')-new Date())/(7*86400000));
+    if(diff2<=0)dateWeeksHtml='<div style="font-size:12px;color:#c0504a;margin-top:4px">Past date</div>';
+    else dateWeeksHtml='<div style="font-size:12px;color:var(--a);font-weight:600;margin-top:4px">'+diff2+' week'+(diff2===1?'':'s')+' away</div>';
+  }
+  var dateHtml='<div class="gf-row"><div class="gf-label">Target Date</div>'
+    +'<input class="gf-inp" id="gfDate" type="date" value="'+escHtml(_gfState.date)+'" oninput="_gfState.date=this.value;_gfSaveState();renderGoalForm()">'
+    +dateWeeksHtml+'</div>';
+
+  var emojiHtml='<div class="gf-row"><div class="gf-label">Icon</div>'
+    +'<button class="gf-emoji-btn" onclick="_gfSaveState();_gfState.emojiPickerOpen=!_gfState.emojiPickerOpen;renderGoalForm()">'
+    +(_gfState.emoji||'🎯')
+    +'<span style="font-size:10px;color:var(--mu);font-weight:600">▾</span>'
+    +'</button>'
+    +(_gfState.emojiPickerOpen
+      ?'<div class="gf-emoji-grid">'+GF_EMOJI_LIST.map(function(e){
+          return'<div class="gf-emoji-opt'+(_gfState.emoji===e?' on':'')+'" onclick="_gfState.emoji=\''+e+'\';_gfState.emojiPickerOpen=false;_gfSaveState();renderGoalForm()">'+e+'</div>';
+        }).join('')+'</div>'
+      :'')
+    +'</div>';
+
+  var specificHtml='';
+  if(_gfState.type==='Running'){
+    var paceStr=_calcPace(_gfState.distance,_gfState.targetTime);
+    specificHtml='<div class="gf-row"><div class="gf-label">Distance</div><div class="gf-pill-row">'
+      +GF_DIST_OPTIONS.map(function(d){
+        return'<button class="gf-pill'+(_gfState.distance===d?' on':'')+'" onclick="_gfSaveState();_gfState.distance=\''+d+'\';renderGoalForm()">'+d+'</button>';
+      }).join('')+'</div></div>'
+      +'<div class="gf-row"><div class="gf-label">Target Time</div>'
+      +'<input class="gf-inp" id="gfTargetTime" placeholder="MM:SS or H:MM:SS" autocomplete="off" value="'+escHtml(_gfState.targetTime)+'" oninput="_gfState.targetTime=this.value;_updatePaceDisplay()">'
+      +'<div class="gf-pace-display" id="gfPaceDisplay" style="'+(paceStr?'':'display:none')+'">'+(paceStr?paceStr+' pace':'')+'</div>'
+      +'</div>';
+  } else if(_gfState.type==='Lifting'){
+    specificHtml='<div class="gf-row"><div class="gf-label">Lift</div><div class="gf-pill-row">'
+      +LIFTS.map(function(l){
+        return'<button class="gf-pill'+(_gfState.liftType===l.k?' on':'')+'" onclick="_gfSaveState();_gfState.liftType=\''+l.k+'\';renderGoalForm()">'+l.l+'</button>';
+      }).join('')+'</div></div>'
+      +'<div class="gf-row"><div class="gf-label">Target Weight</div><div class="gf-pill-scroll">'
+      +GF_WEIGHT_OPTIONS.map(function(w){
+        return'<button class="gf-pill'+(String(_gfState.targetWeight)===String(w)?' on':'')+'" onclick="_gfSaveState();_gfState.targetWeight='+w+';renderGoalForm()">'+w+'</button>';
+      }).join('')+'</div></div>';
+  } else if(_gfState.type==='Biometrics'){
+    var bioUnit=GF_BIO_UNITS[_gfState.bioType]||'';
+    specificHtml='<div class="gf-row"><div class="gf-label">Metric</div><div class="gf-pill-row">'
+      +BIOF.map(function(b){
+        return'<button class="gf-pill'+(_gfState.bioType===b.k?' on':'')+'" onclick="_gfSaveState();_gfState.bioType=\''+b.k+'\';renderGoalForm()">'+b.l+'</button>';
+      }).join('')+'</div></div>'
+      +'<div class="gf-row"><div class="gf-label">Target'+(bioUnit?' ('+bioUnit+')':'')+'</div>'
+      +'<input class="gf-inp" id="gfTargetVal" type="number" inputmode="decimal" placeholder="e.g. 160" value="'+escHtml(_gfState.targetValue)+'">'
+      +'</div>';
+  } else if(_gfState.type==='Protocol'){
+    specificHtml='<div class="gf-row"><div class="gf-label">Category</div><div class="gf-pill-row">'
+      +GF_PROTO_OPTIONS.map(function(p){
+        return'<button class="gf-pill'+(_gfState.subProtocol===p?' on':'')+'" onclick="_gfSaveState();_gfState.subProtocol=\''+p+'\';renderGoalForm()">'+p+'</button>';
+      }).join('')+'</div></div>'
+      +'<div class="gf-row"><div class="gf-label">Details (optional)</div>'
+      +'<textarea class="gf-inp" id="gfAdjustment" placeholder="Describe your goal..." rows="3" style="resize:none;min-height:80px">'+escHtml(_gfState.adjustment)+'</textarea>'
+      +'</div>';
+  }
+
+  var actionsHtml='<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">'
+    +'<button onclick="closeGoalForm()" style="font-size:13px;color:var(--mu);font-weight:600;padding:10px 14px">Cancel</button>'
+    +'<button onclick="saveGoal()" style="font-size:14px;font-weight:700;padding:10px 20px;background:var(--a);color:#1c1c1e;border-radius:10px">Save Goal</button>'
+    +'</div>';
+
+  el.innerHTML=typeHtml+nameHtml+dateHtml+emojiHtml+specificHtml+actionsHtml;
+}
+
+function openGoalForm(){
+  _gfState={type:'Running',name:'',date:'',emoji:'',emojiPickerOpen:false,
+    distance:'',targetTime:'',liftType:'',targetWeight:'',
+    bioType:'',targetValue:'',subProtocol:'',adjustment:''};
+  document.getElementById('goalForm').classList.add('open');
+  renderGoalForm();
+  setTimeout(function(){var n=document.getElementById('gfName');if(n)n.focus();},50);
+}
 function closeGoalForm(){
   document.getElementById('goalForm').classList.remove('open');
-  ['gfName','gfDate','gfDist','gfTarget','gfNotes'].forEach(function(id){document.getElementById(id).value='';});
-  var disp=document.getElementById('gfWeeksDisplay');if(disp){disp.textContent='—';disp.style.color='var(--a)';}
+  document.getElementById('goalForm').innerHTML='';
 }
 function saveGoal(){
-  var name=document.getElementById('gfName').value.trim();if(!name)return;
-  var dateVal=document.getElementById('gfDate').value;
-  var g={id:Date.now(),name:name,date:dateVal,dist:document.getElementById('gfDist').value.trim(),target:document.getElementById('gfTarget').value.trim(),notes:document.getElementById('gfNotes').value.trim(),plan:'',tips:'',archived:false};
+  _gfSaveState();
+  var name=_gfState.name.trim();if(!name)return;
+  var g={id:Date.now(),name:name,date:_gfState.date,
+    emoji:_gfState.emoji,type:_gfState.type,
+    distance:_gfState.distance,targetTime:_gfState.targetTime,
+    liftType:_gfState.liftType,targetWeight:_gfState.targetWeight,
+    bioType:_gfState.bioType,targetValue:_gfState.targetValue,
+    subProtocol:_gfState.subProtocol,adjustment:_gfState.adjustment,
+    dist:_gfState.distance||_gfState.liftType||_gfState.bioType,
+    target:_gfState.targetTime||_gfState.targetWeight,
+    plan:'',tips:'',archived:false};
   goals.unshift(g);save();closeGoalForm();goalsTab='active';renderGoals();
 }
 
@@ -227,23 +353,45 @@ function renderGoals(){
           +'</div></div>'
         :'';
 
+      var emoji=g.emoji||'🎯';
+      var bodyFields='<div class="goal-field"><div class="goal-label">Event</div>'
+        +'<div class="goal-value" onclick="editGoalName('+g.id+',this)" style="cursor:text">'+escHtml(g.name)+'</div></div>';
+
+      if(g.type==='Running'){
+        var pace=_calcPace(g.distance,g.targetTime);
+        if(g.distance)bodyFields+='<div class="goal-field"><div class="goal-label">Distance</div><div class="goal-value">'+escHtml(g.distance)+'</div></div>';
+        if(g.targetTime)bodyFields+='<div class="goal-field"><div class="goal-label">Target Time</div>'
+          +'<div class="goal-value" onclick="openTargetTimeSheet('+g.id+')" style="cursor:pointer;color:var(--a)">'+escHtml(g.targetTime)+'</div></div>';
+        if(pace)bodyFields+='<div class="goal-field"><div class="goal-label">Pace</div><div class="goal-value">'+pace+'</div></div>';
+      } else if(g.type==='Lifting'){
+        if(g.liftType){var liftLabel=(LIFTS.find(function(x){return x.k===g.liftType;})||{l:g.liftType}).l;bodyFields+='<div class="goal-field"><div class="goal-label">Lift</div><div class="goal-value">'+escHtml(liftLabel)+'</div></div>';}
+        if(g.targetWeight)bodyFields+='<div class="goal-field"><div class="goal-label">Target Weight</div><div class="goal-value">'+escHtml(g.targetWeight)+' lbs</div></div>';
+      } else if(g.type==='Biometrics'){
+        if(g.bioType){var bioLabel=(BIOF.find(function(x){return x.k===g.bioType;})||{l:g.bioType}).l;bodyFields+='<div class="goal-field"><div class="goal-label">Metric</div><div class="goal-value">'+escHtml(bioLabel)+'</div></div>';}
+        if(g.targetValue)bodyFields+='<div class="goal-field"><div class="goal-label">Target</div><div class="goal-value">'+escHtml(g.targetValue)+'</div></div>';
+      } else if(g.type==='Protocol'){
+        if(g.subProtocol)bodyFields+='<div class="goal-field"><div class="goal-label">Category</div><div class="goal-value">'+escHtml(g.subProtocol)+'</div></div>';
+        if(g.adjustment)bodyFields+='<div class="goal-field"><div class="goal-label">Details</div><div class="goal-value">'+escHtml(g.adjustment)+'</div></div>';
+      } else {
+        if(g.dist)bodyFields+='<div class="goal-field"><div class="goal-label">Distance / Type</div><div class="goal-value">'+escHtml(g.dist)+'</div></div>';
+        if(g.target)bodyFields+='<div class="goal-field"><div class="goal-label">Target Time</div><div class="goal-value">'+escHtml(g.target)+'</div></div>';
+        if(g.notes)bodyFields+='<div class="goal-field"><div class="goal-label">Notes</div><div class="goal-value">'+escHtml(g.notes)+'</div></div>';
+      }
+
+      if(g.plan)bodyFields+='<div class="goal-field"><div class="goal-label">Training Plan</div><div class="goal-plan">'+escHtml(g.plan)+'</div></div>';
+      if(g.tips)bodyFields+='<div class="goal-field"><div class="goal-label">Race Day Tips</div><div class="goal-plan">'+escHtml(g.tips)+'</div></div>';
+
       cardsHtml+='<div class="goal-swipe-wrap" id="gsw-'+g.id+'">'
         +swipeBtn
         +'<div class="goal-card'+(isArchivedTab?' goal-archived':'')+'" id="goalCard-'+g.id+'">'
         +'<div class="goal-hdr" onclick="if(!_goalSwipedRow)toggleGoalBody('+g.id+');else _goalSnapBack()">'
-        +'<div class="goal-icon" style="background:var(--as)">🎯</div>'
+        +'<div class="goal-icon" style="background:var(--as)">'+emoji+'</div>'
         +'<div style="flex:1;min-width:0"><div class="goal-title">'+escHtml(g.name)+'</div>'
         +(dateStr?'<div class="goal-date">'+dateStr+(relStr?' · '+relStr:'')+'</div>':'')
         +'</div>'
         +'<span class="rpc" id="gc-'+g.id+'">›</span></div>'
         +'<div class="goal-body" id="gb-'+g.id+'">'
-        +'<div class="goal-field"><div class="goal-label">Event</div>'
-        +'<div class="goal-value" onclick="editGoalName('+g.id+',this)" style="cursor:text">'+escHtml(g.name)+'</div></div>'
-        +(g.dist?'<div class="goal-field"><div class="goal-label">Distance / Type</div><div class="goal-value">'+escHtml(g.dist)+'</div></div>':'')
-        +(g.target?'<div class="goal-field"><div class="goal-label">Target Time</div><div class="goal-value">'+escHtml(g.target)+'</div></div>':'')
-        +(g.notes?'<div class="goal-field"><div class="goal-label">Notes</div><div class="goal-value">'+escHtml(g.notes)+'</div></div>':'')
-        +(g.plan?'<div class="goal-field"><div class="goal-label">Training Plan</div><div class="goal-plan">'+escHtml(g.plan)+'</div></div>':'')
-        +(g.tips?'<div class="goal-field"><div class="goal-label">Race Day Tips</div><div class="goal-plan">'+escHtml(g.tips)+'</div></div>':'')
+        +bodyFields
         +'<div style="display:flex;gap:8px;margin-top:12px">'
         +'<button class="gen-btn" id="gbtn-'+g.id+'" onclick="'+(g.plan?'toggleAdjustPlan('+g.id+')':'generateGoalPlan('+g.id+')')+'">✦ '+(g.plan?'Adjust Plan':'Generate Plan')+'</button>'
         +'</div>'
@@ -256,6 +404,39 @@ function renderGoals(){
   el.innerHTML=tabHtml+cardsHtml;
   list.forEach(function(g){attachGoalSwipe(g.id);});
   _restoreGoalOpenState();
+}
+
+// ── Target time bottom sheet ───────────────────────────────────────────────
+function openTargetTimeSheet(id){
+  var g=goals.find(function(x){return x.id===id;});if(!g)return;
+  var overlay=document.createElement('div');
+  overlay.id='ttSheet';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end';
+  var sheet=document.createElement('div');
+  sheet.style.cssText='width:100%;background:var(--s);border-radius:20px 20px 0 0;padding:24px 20px 40px;box-sizing:border-box';
+  sheet.innerHTML='<div style="text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:12px">Target Time</div>'
+    +'<div style="font-family:var(--fd);font-size:40px;font-weight:600;color:var(--a);text-align:center;margin-bottom:16px">'+escHtml(g.targetTime||'—')+'</div>'
+    +'<p style="font-size:14px;color:var(--t2);text-align:center;line-height:1.6;margin-bottom:20px">Adjust your training plan for this target?</p>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +'<button onclick="_openGoalAdjustFromSheet('+id+')" style="padding:14px;background:var(--a);color:#1c1c1e;border-radius:12px;font-size:15px;font-weight:700">'+(g.plan?'Adjust Plan':'Generate Plan')+'</button>'
+    +'<button onclick="closeTargetTimeSheet()" style="padding:14px;background:var(--s2);color:var(--mu);border-radius:12px;font-size:15px;font-weight:600">Dismiss</button>'
+    +'</div>';
+  overlay.appendChild(sheet);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)closeTargetTimeSheet();});
+  document.body.appendChild(overlay);
+}
+function closeTargetTimeSheet(){
+  var el=document.getElementById('ttSheet');if(el)el.parentNode.removeChild(el);
+}
+function _openGoalAdjustFromSheet(id){
+  closeTargetTimeSheet();
+  _goalOpenIds[id]=true;
+  renderGoals();
+  var g=goals.find(function(x){return x.id===id;});if(!g)return;
+  setTimeout(function(){
+    if(g.plan)toggleAdjustPlan(id);
+    else generateGoalPlan(id);
+  },50);
 }
 
 // ── Generate initial plan ──────────────────────────────────────────────────

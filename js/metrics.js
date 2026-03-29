@@ -33,40 +33,178 @@ function renderMetrics(){
   });
   document.getElementById('bioCard').innerHTML=bcHtml;
 
-  var lHtml='';LIFTS.forEach(function(lf){var pr=prs[lf.k];lHtml+='<div class="pr-row"><div><div class="pr-name">'+lf.l+'</div>'+(pr?'<div class="pr-date">'+pr.d+'</div>':'')+'</div><div style="text-align:right"><div class="pr-val">'+(pr?pr.v+' lbs':'—')+'</div><div class="pr-inp-row" id="prrow-'+lf.k+'"><input class="inp" id="prin-'+lf.k+'" type="number" placeholder="lbs" style="width:80px;text-align:right"><button class="ok-btn" onclick="savePR(\''+lf.k+'\',\'lift\')">✓</button></div><button class="pr-btn" onclick="togglePRInput(\''+lf.k+'\')">+</button></div></div>';});
-  document.getElementById('liftPRs').innerHTML=lHtml;
-  var rHtml='';RUNS.forEach(function(r){var pr=prs[r.k];rHtml+='<div class="pr-row"><div><div class="pr-name">'+r.l+'</div>'+(pr?'<div class="pr-date">'+pr.d+'</div>':'')+'</div><div style="text-align:right"><div class="pr-val">'+(pr?pr.v:'—')+'</div><div class="pr-inp-row" id="prrow-'+r.k+'"><input class="inp" id="prin-'+r.k+'" type="text" placeholder="MM:SS" style="width:90px;text-align:right"><button class="ok-btn" onclick="savePR(\''+r.k+'\',\'run\')">✓</button></div><button class="pr-btn" onclick="togglePRInput(\''+r.k+'\')">+</button></div></div>';});
-  document.getElementById('runPRs').innerHTML=rHtml;
-  _attachPRInputListeners();
+  renderPRCard();
 }
 
-function togglePRInput(k){
-  var row=document.getElementById('prrow-'+k);if(!row)return;
-  var isOpen=row.classList.contains('open');
-  if(isOpen){row.classList.remove('open');}
-  else{row.classList.add('open');var inp=document.getElementById('prin-'+k);if(inp)inp.focus();}
-}
-function savePR(k,type){var inp=document.getElementById('prin-'+k);if(!inp||!inp.value.trim())return;prs[k]={v:inp.value.trim(),d:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})};save();renderMetrics();var row=document.getElementById('prrow-'+k);if(row)showSavedFlash(row,'✓ PR saved');}
-var _prTouchListenerAttached = false;
-function _attachPRInputListeners(){
+// ── PR overhaul ────────────────────────────────────────────────────────────
+
+var prsTab=sessionStorage.getItem('ac_prs_tab')||'lifting';
+var _prSwipedRow=null;
+var _prExpandedKeys={};
+var _prInputOpen={};
+
+function _migratePrs(){
   LIFTS.concat(RUNS).forEach(function(item){
-    var inp=document.getElementById('prin-'+item.k);
-    var row=document.getElementById('prrow-'+item.k);
-    if(inp&&row){
-      inp.addEventListener('keydown',function(e){if(e.key==='Enter')savePR(item.k,LIFTS.indexOf(item)!==-1?'lift':'run');});
-      inp.addEventListener('blur',function(){setTimeout(function(){if(row.classList)row.classList.remove('open');},150);});
+    var v=prs[item.k];
+    if(v&&!Array.isArray(v)){prs[item.k]=[v];}
+  });
+}
+
+function selPRTab(t){
+  prsTab=t;sessionStorage.setItem('ac_prs_tab',t);renderPRCard();
+}
+
+function renderPRCard(){
+  _migratePrs();
+  var el=document.getElementById('prsCard');if(!el)return;
+  var items=prsTab==='lifting'?LIFTS:RUNS;
+  var isLiftTab=prsTab==='lifting';
+
+  var html='<div class="ct" style="margin-bottom:0">Personal Records</div>'
+    +'<div class="mac-tabs" style="margin-top:10px">'
+    +'<button class="mac-tab'+(prsTab==='lifting'?' on':'')+'" onclick="selPRTab(\'lifting\')">Lifting</button>'
+    +'<button class="mac-tab'+(prsTab==='running'?' on':'')+'" onclick="selPRTab(\'running\')">Running</button>'
+    +'</div>';
+
+  items.forEach(function(item){
+    var entries=prs[item.k]||[];
+    var best=entries.length?entries[0]:null;
+    var unit=isLiftTab?' lbs':'';
+    var isExp=!!_prExpandedKeys[item.k];
+    var isInpOpen=!!_prInputOpen[item.k];
+
+    html+='<div class="pr-ex-row" id="prex-'+item.k+'">'
+      +'<div class="pr-ex-hdr" onclick="togglePRExpand(\''+item.k+'\')">'
+      +'<div><div class="pr-name">'+item.l+'</div>'+(best?'<div class="pr-date">'+best.d+'</div>':'')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<div class="pr-val">'+(best?escHtml(best.v)+unit:'—')+'</div>'
+      +'<span class="rpc'+(isExp?' open':'')+'" id="prchev-'+item.k+'">›</span>'
+      +'</div></div>';
+
+    if(isExp){
+      html+='<div class="pr-ex-body">';
+      entries.forEach(function(entry,i){
+        html+='<div class="pr-entry-wrap" id="prewrap-'+item.k+'-'+i+'">'
+          +'<button class="pr-del-btn" onclick="deletePREntry(\''+item.k+'\','+i+')">Delete</button>'
+          +'<div class="pr-entry-row" id="prererow-'+item.k+'-'+i+'">'
+          +'<span class="pr-entry-val">'+escHtml(entry.v)+unit+'</span>'
+          +'<span class="pr-entry-date">'+escHtml(entry.d)+'</span>'
+          +'</div></div>';
+      });
+      html+='<div class="pr-add-row">';
+      if(!isInpOpen){
+        html+='<button class="pr-add-btn" onclick="openPRInput(\''+item.k+'\')">+ Add PR</button>';
+      } else {
+        var ph=isLiftTab?'lbs':'MM:SS';
+        var inpType=isLiftTab?'number':'text';
+        html+='<input class="inp" id="prin-'+item.k+'" type="'+inpType+'" placeholder="'+ph+'" style="flex:1;max-width:120px">'
+          +'<button class="ok-btn" onclick="savePR(\''+item.k+'\')">✓</button>'
+          +'<button onclick="closePRInput(\''+item.k+'\')" style="font-size:13px;color:var(--mu);font-weight:600;padding:7px 10px">Cancel</button>';
+      }
+      html+='</div></div>';
+    }
+    html+='</div>';
+  });
+
+  el.innerHTML=html;
+
+  items.forEach(function(item){
+    var entries=prs[item.k]||[];
+    entries.forEach(function(_,i){attachPRSwipe(item.k,i);});
+  });
+
+  Object.keys(_prInputOpen).forEach(function(k){
+    if(_prInputOpen[k]){
+      var inp=document.getElementById('prin-'+k);
+      if(inp){inp.focus();_attachPRInpListeners(k);}
     }
   });
-  if(!_prTouchListenerAttached){
-    _prTouchListenerAttached=true;
-    document.addEventListener('touchstart',function(e){
-      var openRows=document.querySelectorAll('.pr-inp-row.open');
-      if(!openRows.length)return;
-      openRows.forEach(function(row){
-        if(!row.contains(e.target)){row.classList.remove('open');}
-      });
-    },{passive:true});
+}
+
+function togglePRExpand(k){
+  _prExpandedKeys[k]=!_prExpandedKeys[k];
+  if(!_prExpandedKeys[k])delete _prInputOpen[k];
+  renderPRCard();
+}
+
+function openPRInput(k){_prInputOpen[k]=true;renderPRCard();}
+
+function closePRInput(k){
+  if(!_prInputOpen[k])return;
+  delete _prInputOpen[k];renderPRCard();
+}
+
+function _attachPRInpListeners(k){
+  var inp=document.getElementById('prin-'+k);if(!inp)return;
+  var isLift=LIFTS.some(function(x){return x.k===k;});
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')savePR(k);});
+  inp.addEventListener('blur',function(){setTimeout(function(){closePRInput(k);},200);});
+}
+
+function savePR(k){
+  _migratePrs();
+  var inp=document.getElementById('prin-'+k);if(!inp||!inp.value.trim())return;
+  var val=inp.value.trim();
+  var d=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  if(!prs[k])prs[k]=[];
+  prs[k].unshift({v:val,d:d});
+  var isLift=LIFTS.some(function(x){return x.k===k;});
+  if(isLift){
+    prs[k].sort(function(a,b){return parseFloat(b.v)-parseFloat(a.v);});
+  } else {
+    prs[k].sort(function(a,b){return _parsePRMinutes(a.v)-_parsePRMinutes(b.v);});
   }
+  prs[k]=prs[k].slice(0,3);
+  delete _prInputOpen[k];
+  _prExpandedKeys[k]=true;
+  save();renderPRCard();
+}
+
+function _parsePRMinutes(s){
+  s=String(s);var parts=s.split(':').map(Number);
+  if(parts.length===3)return parts[0]*60+parts[1]+parts[2]/60;
+  if(parts.length===2)return parts[0]+parts[1]/60;
+  return parseFloat(s)||9999;
+}
+
+function deletePREntry(k,i){
+  _migratePrs();if(!prs[k])return;
+  _prSwipedRow=null;
+  prs[k].splice(i,1);
+  if(!prs[k].length)delete prs[k];
+  save();renderPRCard();
+}
+
+function attachPRSwipe(k,i){
+  var row=document.getElementById('prererow-'+k+'-'+i);if(!row)return;
+  var startX,startY,tracking=false,wasOpen=false;
+  row.addEventListener('touchstart',function(e){
+    if(_prSwipedRow&&_prSwipedRow!==row){
+      _prSwipedRow.style.transition='transform .2s ease';
+      _prSwipedRow.style.transform='';
+      var sr=_prSwipedRow;setTimeout(function(){sr.style.transition='';},220);
+      _prSwipedRow=null;
+    }
+    wasOpen=(_prSwipedRow===row);
+    startX=e.touches[0].clientX;startY=e.touches[0].clientY;tracking=false;
+  },{passive:true});
+  row.addEventListener('touchmove',function(e){
+    var dx=e.touches[0].clientX-startX;
+    var dy=Math.abs(e.touches[0].clientY-startY);
+    if(!tracking&&(Math.abs(dx)>6||dy>6)){tracking=Math.abs(dx)>dy;}
+    if(!tracking)return;
+    var base=wasOpen?-80:0;
+    row.style.transform='translateX('+Math.max(-80,Math.min(0,base+dx))+'px)';
+  },{passive:true});
+  row.addEventListener('touchend',function(e){
+    if(!tracking)return;
+    var dx=e.changedTouches[0].clientX-startX;
+    var finalX=(wasOpen?-80:0)+dx;
+    row.style.transition='transform .2s ease';
+    if(finalX<-40){row.style.transform='translateX(-80px)';_prSwipedRow=row;}
+    else{row.style.transform='';if(_prSwipedRow===row)_prSwipedRow=null;}
+    setTimeout(function(){row.style.transition='';},220);
+  },{passive:true});
 }
 
 // ── Biometrics sub-page ────────────────────────────────────────────────────
