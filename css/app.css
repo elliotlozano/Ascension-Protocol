@@ -21,14 +21,13 @@ textarea,input{font-family:var(--fb)}
 .ey{font-size:11px;letter-spacing:.18em;color:var(--mu);text-transform:uppercase;font-weight:500;margin-bottom:2px}
 .ttl{font-family:var(--fd);font-size:26px;font-weight:600;color:var(--t);line-height:1}
 #dock{flex-shrink:0;background:var(--dk);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-top:1px solid var(--b);padding:6px 0 calc(env(safe-area-inset-bottom,0px) * 0.5);display:flex;justify-content:space-around;align-items:center;z-index:50}
-.db{display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 0;flex:1}
+.db{display:flex;flex-direction:column;align-items:center;gap:0;padding:2px 0 0 0;flex:1}
 .db:active{transform:scale(.9)}
 .di{display:flex;align-items:center;justify-content:center;transition:color var(--tr)}
-.di svg{width:24px;height:24px}
 .db.on .di{color:var(--a)}
 .db:not(.on) .di{color:var(--mu)}
-.db.on .di svg{fill:currentColor;stroke:currentColor}
-.db:not(.on) .di svg{fill:none;stroke:currentColor}
+.db.on .di svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2.4}
+.db:not(.on) .di svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8}
 .card{background:var(--s);border-radius:var(--rc);border:1px solid var(--b);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
 .ct{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:10px}
 /* Planner strips */
