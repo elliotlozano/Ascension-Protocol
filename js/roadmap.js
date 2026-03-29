@@ -2,6 +2,42 @@
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+var _goalSwipedRow = null;
+function _goalSnapBack(){if(_goalSwipedRow){_goalSwipedRow.style.transform='';_goalSwipedRow=null;}}
+function attachGoalSwipe(id){
+  var card=document.getElementById('goalCard-'+id);if(!card)return;
+  var tx=0,ty=0;
+  card.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  card.addEventListener('touchend',function(e){
+    var dx=e.changedTouches[0].clientX-tx;
+    var dy=Math.abs(e.changedTouches[0].clientY-ty);
+    if(dy>Math.abs(dx)||Math.abs(dx)<8)return;
+    if(dx<-40){if(_goalSwipedRow&&_goalSwipedRow!==card){_goalSwipedRow.style.transform='';}card.style.transform='translateX(-80px)';_goalSwipedRow=card;}
+    else if(dx>20&&_goalSwipedRow===card){_goalSnapBack();}
+  },{passive:true});
+}
+function editGoalTitle(id,el){
+  var g=goals.find(function(x){return x.id===id;});if(!g)return;
+  if(_goalSwipedRow){_goalSnapBack();return;}
+  var current=el.textContent;
+  var inp=document.createElement('input');inp.className='gl-edit-inp';inp.value=current;inp.style.flex='1';inp.style.fontSize='15px';
+  var committed=false;
+  function commit(){if(committed)return;committed=true;var val=inp.value.trim();if(val&&val!==current){g.name=val;save();}renderGoals();}
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){e.preventDefault();committed=true;renderGoals();}});
+  el.parentNode.replaceChild(inp,el);inp.focus();inp.select();
+}
+function editGoalTarget(id,el){
+  var g=goals.find(function(x){return x.id===id;});if(!g)return;
+  var current=el.textContent;
+  var inp=document.createElement('input');inp.className='gl-edit-inp';inp.value=current;inp.placeholder='e.g. 1:45:00';inp.style.width='130px';
+  var committed=false;
+  function commit(){if(committed)return;committed=true;var val=inp.value.trim();if(val!==current){g.target=val;save();}renderGoals();}
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){e.preventDefault();committed=true;renderGoals();}});
+  el.parentNode.replaceChild(inp,el);inp.focus();inp.select();
+}
+
 function togglePhase(id){
   var body=document.getElementById('pd'+id),chev=document.getElementById('pc'+id);
   var open=body.classList.contains('open');
@@ -63,7 +99,7 @@ function saveGoal(){
   var g={id:Date.now(),name:name,date:dateVal,dist:document.getElementById('gfDist').value.trim(),target:document.getElementById('gfTarget').value.trim(),weeks:weeksOut,notes:document.getElementById('gfNotes').value.trim(),plan:'',tips:''};
   goals.unshift(g);save();closeGoalForm();renderGoals();
 }
-function deleteGoal(id){goals=goals.filter(function(g){return g.id!==id;});save();renderGoals();}
+function deleteGoal(id){_goalSnapBack();goals=goals.filter(function(g){return g.id!==id;});save();renderGoals();}
 function toggleGoalBody(id){
   var body=document.getElementById('gb-'+id),chev=document.getElementById('gc-'+id);
   var open=body.classList.contains('open');
@@ -76,25 +112,27 @@ function renderGoals(){
   goals.forEach(function(g){
     var dateStr=g.date?new Date(g.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
     var weeksStr=g.weeks>0?g.weeks+' weeks away':'';
-    html+='<div class="goal-card">'
-      +'<div class="goal-hdr" onclick="toggleGoalBody('+g.id+')">'
+    html+='<div class="goal-swipe-wrap">'
+      +'<button class="goal-del-reveal-btn" onclick="deleteGoal('+g.id+')">Delete</button>'
+      +'<div class="goal-card" id="goalCard-'+g.id+'">'
+      +'<div class="goal-hdr" onclick="if(!_goalSwipedRow)toggleGoalBody('+g.id+');else _goalSnapBack()">'
       +'<div class="goal-icon" style="background:var(--as)">🎯</div>'
-      +'<div style="flex:1;min-width:0"><div class="goal-title">'+escHtml(g.name)+'</div>'+(dateStr?'<div class="goal-date">'+dateStr+(weeksStr?' · '+weeksStr:'')+'</div>':'')+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="goal-title" onclick="event.stopPropagation();editGoalTitle('+g.id+',this)">'+escHtml(g.name)+'</div>'+(dateStr?'<div class="goal-date">'+dateStr+(weeksStr?' · '+weeksStr:'')+'</div>':'')+'</div>'
       +'<span class="rpc" id="gc-'+g.id+'">›</span></div>'
       +'<div class="goal-body" id="gb-'+g.id+'">'
       +(g.dist?'<div class="goal-field"><div class="goal-label">Distance / Type</div><div class="goal-value">'+escHtml(g.dist)+'</div></div>':'')
-      +(g.target?'<div class="goal-field"><div class="goal-label">Target Time</div><div class="goal-value">'+escHtml(g.target)+'</div></div>':'')
+      +(g.target?'<div class="goal-field"><div class="goal-label">Target Time</div><div class="goal-value" onclick="editGoalTarget('+g.id+',this)" style="cursor:text">'+escHtml(g.target)+'</div></div>':'')
       +(g.notes?'<div class="goal-field"><div class="goal-label">Notes</div><div class="goal-value">'+escHtml(g.notes)+'</div></div>':'')
       +(g.plan?'<div class="goal-field"><div class="goal-label">Training Plan</div><div class="goal-plan" id="gplan-'+g.id+'">'+escHtml(g.plan)+'</div></div>':'<div id="gplan-'+g.id+'" style="display:none"></div>')
       +(g.tips?'<div class="goal-field"><div class="goal-label">Race Day Tips</div><div class="goal-plan" id="gtips-'+g.id+'">'+escHtml(g.tips)+'</div></div>':'<div id="gtips-'+g.id+'" style="display:none"></div>')
       +'<div style="display:flex;gap:8px;margin-top:12px">'
       +'<button class="gen-btn" id="gbtn-'+g.id+'" onclick="generateGoalPlan('+g.id+')">✦ '+(g.plan?'Regenerate Plan':'Generate Plan')+'</button>'
-      +'<button onclick="deleteGoal('+g.id+')" style="font-size:12px;color:var(--mu);padding:10px 12px;background:var(--s2);border-radius:10px;border:1px solid var(--b)">Delete</button>'
       +'</div>'
       +'<div id="gerr-'+g.id+'" style="display:none;font-size:12px;color:#c0504a;margin-top:8px;font-weight:500"></div>'
-      +'</div></div>';
+      +'</div></div></div>';
   });
   el.innerHTML=html;
+  goals.forEach(function(g){attachGoalSwipe(g.id);});
 }
 
 function generateGoalPlan(id){

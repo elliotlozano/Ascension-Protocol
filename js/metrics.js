@@ -40,7 +40,7 @@ function renderMetrics(){
 }
 
 function togglePRInput(k){var row=document.getElementById('prrow-'+k);if(row)row.classList.toggle('open');var inp=document.getElementById('prin-'+k);if(inp&&row.classList.contains('open'))inp.focus();}
-function savePR(k,type){var inp=document.getElementById('prin-'+k);if(!inp||!inp.value.trim())return;prs[k]={v:inp.value.trim(),d:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})};save();renderMetrics();}
+function savePR(k,type){var inp=document.getElementById('prin-'+k);if(!inp||!inp.value.trim())return;prs[k]={v:inp.value.trim(),d:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})};save();renderMetrics();var row=document.getElementById('prrow-'+k);if(row)showSavedFlash(row,'✓ PR saved');}
 
 // ── Biometrics sub-page ────────────────────────────────────────────────────
 

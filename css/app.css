@@ -24,10 +24,19 @@ textarea,input{font-family:var(--fb)}
 .db{display:flex;flex-direction:column;align-items:center;gap:0;padding:2px 0 0 0;flex:1}
 .db:active{transform:scale(.9)}
 .di{display:flex;align-items:center;justify-content:center;transition:color var(--tr)}
+.dl{display:none;font-size:11px;font-weight:600;transition:color var(--tr)}
 .db.on .di{color:var(--a)}
 .db:not(.on) .di{color:var(--mu)}
-.db.on .di svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:2.4}
-.db:not(.on) .di svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8}
+.db.on .dl{color:var(--a)}
+.db:not(.on) .dl{color:var(--mu)}
+.db.on .di svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.8}
+.db:not(.on) .di svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.4}
+@media(min-width:768px){
+  #dock{padding:12px 0 12px}
+  .db{gap:4px}
+  .dl{display:block}
+  .db.on .di svg,.db:not(.on) .di svg{width:26px;height:26px}
+}
 .card{background:var(--s);border-radius:var(--rc);border:1px solid var(--b);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
 .ct{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:10px}
 /* Planner strips */
@@ -114,7 +123,13 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .mission-ta.open{display:block}
 .edit-btn{font-size:12px;color:var(--a);font-weight:600;padding:4px 10px;background:var(--as);border-radius:6px}
 /* Goals */
-.goal-card{background:var(--s);border-radius:var(--rc);border:1px solid var(--b);margin-bottom:10px;box-shadow:var(--sh);overflow:hidden}
+.goal-swipe-wrap{position:relative;margin-bottom:10px}
+.goal-card{background:var(--s);border-radius:var(--rc);border:1px solid var(--b);box-shadow:var(--sh);overflow:hidden;position:relative;z-index:1;transition:transform .2s}
+.goal-del-reveal-btn{position:absolute;right:0;top:0;bottom:0;width:80px;background:#c0504a;color:#fff;font-size:13px;font-weight:600;border-radius:0 var(--rc) var(--rc) 0;display:flex;align-items:center;justify-content:center;z-index:0}
+/* Ach row swipe */
+.ach-swipe-wrap{position:relative;margin-bottom:6px}
+.ach-swipe-wrap .ach-row{margin-bottom:0;position:relative;z-index:1;transition:transform .2s}
+.ach-del-reveal-btn{position:absolute;right:0;top:0;bottom:0;width:80px;background:#c0504a;color:#fff;font-size:13px;font-weight:600;border-radius:0 10px 10px 0;display:flex;align-items:center;justify-content:center;z-index:0}
 .goal-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background var(--tr)}
 .goal-hdr:active{background:var(--s2)}
 .goal-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}

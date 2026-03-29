@@ -154,7 +154,7 @@ function renderMacroToday(){
           +'<button class="hover-del-btn" onclick="deleteMacroMeal('+mi+')" tabindex="-1">×</button>'
           +'</div>';
       }).join('')
-    : '<div class="mac-empty">Check off meals in Protocol or add one manually below.</div>';
+    : '<div class="mac-empty">No meals logged yet — check off nutrition tasks in the Protocol tab.</div>';
 
   // Manual entry form
   var types=['Breakfast','Lunch','Dinner','Snack'];
@@ -250,6 +250,8 @@ function renderMacroWeek(){
       +'</div>';
   }).join('');
 
+  var loggedDays=days.filter(function(d){return macros[d.dk]&&macros[d.dk].totals&&macros[d.dk].totals.cal>0;});
+  if(!loggedDays.length){rowsHtml+='<div style="font-size:13px;color:var(--mu);font-style:italic;text-align:center;padding:8px 0 4px">No meals logged this week yet.</div>';}
   document.getElementById('macSec-week').innerHTML=rowsHtml;
 
   requestAnimationFrame(function(){
@@ -397,7 +399,7 @@ function renderMacroInsights(){
   }
 
   var calDiff=avgCal-tgt.cal;
-  var calNudge=avgCal===0?'Check off meals in Protocol to start tracking.'
+  var calNudge=avgCal===0?'No meals logged yet — check off nutrition tasks in the Protocol tab.'
     :calDiff>200?'Running a surplus — consider reducing evening snacks.'
     :calDiff<-200?'Running a deficit — fuel your training with quality carbs.'
     :'On target. Keep it up.';

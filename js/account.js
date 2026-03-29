@@ -3,6 +3,42 @@
 var _glSwipedRow = null;
 function _glSnapBack(){if(_glSwipedRow){_glSwipedRow.style.transform='';_glSwipedRow=null;}}
 
+var _achSwipedRow = null;
+function _achSnapBack(){if(_achSwipedRow){_achSwipedRow.style.transform='';_achSwipedRow=null;}}
+function attachAchSwipe(k,i){
+  var row=document.getElementById('achrow-'+k+'-'+i);if(!row)return;
+  var tx=0,ty=0;
+  row.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  row.addEventListener('touchend',function(e){
+    var dx=e.changedTouches[0].clientX-tx;
+    var dy=Math.abs(e.changedTouches[0].clientY-ty);
+    if(dy>Math.abs(dx)||Math.abs(dx)<8)return;
+    if(dx<-40){if(_achSwipedRow&&_achSwipedRow!==row){_achSwipedRow.style.transform='';}row.style.transform='translateX(-80px)';_achSwipedRow=row;}
+    else if(dx>20&&_achSwipedRow===row){_achSnapBack();}
+  },{passive:true});
+}
+function deleteAchTime(k,i){
+  _achSnapBack();
+  if(ach[k])ach[k].splice(i,1);
+  save();renderAchievements();
+}
+function editAchTime(k,i,el){
+  if(_achSwipedRow){_achSnapBack();return;}
+  if(!ach[k]||!ach[k][i])return;
+  var current=el.textContent;
+  var inp=document.createElement('input');inp.className='gl-edit-inp';inp.value=current;inp.placeholder='e.g. 24:32';inp.style.width='90px';inp.style.fontSize='14px';
+  var committed=false;
+  function commit(){
+    if(committed)return;committed=true;
+    var val=inp.value.trim();
+    if(val&&val!==current){ach[k][i].v=val;ach[k].sort(function(a,b){return timeToSec(a.v)-timeToSec(b.v);});save();}
+    renderAchievements();
+  }
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){e.preventDefault();committed=true;renderAchievements();}});
+  el.parentNode.replaceChild(inp,el);inp.focus();inp.select();
+}
+
 
 // Feature 7: Nizoral removed — only Finasteride and Dutasteride remain
 var GUIDE_DATA = {
@@ -541,12 +577,23 @@ function renderAchievements() {
     var times=(ach[dist.k]||[]).slice(0,3);
     html+='<div class="card"><div class="ach-sec"><div class="ach-hdr"><span class="ach-icon">'+dist.icon+'</span><span class="ach-title">'+dist.l+'</span></div>';
     if(!times.length)html+='<div style="font-size:13px;color:var(--mu);font-style:italic;padding:4px 0 8px">No times logged yet.</div>';
-    times.forEach(function(entry,i){html+='<div class="ach-row"><span class="ach-rank '+ranks[i]+'">'+rlbls[i]+'</span><span class="ach-time">'+entry.v+'</span><span class="ach-date">'+entry.d+'</span></div>';});
+    times.forEach(function(entry,i){
+      html+='<div class="ach-swipe-wrap">'
+        +'<button class="ach-del-reveal-btn" onclick="deleteAchTime(\''+dist.k+'\','+i+')">Delete</button>'
+        +'<div class="ach-row" id="achrow-'+dist.k+'-'+i+'">'
+        +'<span class="ach-rank '+ranks[i]+'">'+rlbls[i]+'</span>'
+        +'<span class="ach-time" onclick="editAchTime(\''+dist.k+'\','+i+',this)" style="cursor:text">'+entry.v+'</span>'
+        +'<span class="ach-date">'+entry.d+'</span>'
+        +'</div></div>';
+    });
     html+='<div class="ach-add"><input class="ach-inp" id="achInp-'+dist.k+'" placeholder="Log time (e.g. 24:32)" type="text"><button class="ach-log-btn" onclick="logAchievement(\''+dist.k+'\')">Log</button></div></div></div>';
   });
 
   document.getElementById('achBody').innerHTML = html;
-  ACH_DISTS.forEach(function(dist){var inp=document.getElementById('achInp-'+dist.k);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')logAchievement(dist.k);});});
+  ACH_DISTS.forEach(function(dist){
+    var inp=document.getElementById('achInp-'+dist.k);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')logAchievement(dist.k);});
+    (ach[dist.k]||[]).slice(0,3).forEach(function(_,i){attachAchSwipe(dist.k,i);});
+  });
   var milesInp=document.getElementById('milesInp');if(milesInp)milesInp.addEventListener('keydown',function(e){if(e.key==='Enter')logWeekMiles();});
 }
 
@@ -602,53 +649,29 @@ function getNextWeekLabel(){
   var fmt=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
   return'Week of '+fmt(mon)+' – '+fmt(new Date(mon.getTime()+6*86400000));
 }
-function generateGroceryList(tw,cb){
-  var meals=[];
-  ['Monday','Tuesday','Wednesday','Thursday'].forEach(function(d){var s=getDinner(tw,d);if(s)meals.push('Dinner '+d+': '+s);});
-  DAYS.forEach(function(d){var s=getBreakfast(tw,d);if(s)meals.push('Breakfast '+d+': '+s);});
-  DAYS.forEach(function(d){var s=getSnack(tw,d);if(s)meals.push('Snack '+d+': '+s);});
-  console.log('Grocery meals for week '+tw+':', meals);
-  var prompt='These are the meals for the week:\n'+meals.join('\n')+'\n\nGo through each meal one by one and extract every food item and ingredient mentioned. Include ALL of them — do not omit any ingredient. For example: if a meal mentions bison, bison must appear in protein. If a meal includes eggs, eggs must appear in protein. If a meal mentions granola, granola must appear in grains. If a meal mentions everything bagel seasoning, it must appear in snacks. Nothing from the meal strings should be omitted.\n\nAssign each ingredient to exactly one section:\n- protein: all meats, poultry, fish, seafood, eggs (when a main meal ingredient)\n- produce: all fruits and vegetables\n- grains: bread, oats, rice, pasta, granola, crackers, wraps, tortillas\n- dairy: milk, cheese, yogurt, cottage cheese, butter\n- snacks: nuts, seeds, seasonings, sauces, condiments, and anything that does not fit the above four\n\nDeduplicate across sections — no item in more than one section.\n\nReply with ONLY valid JSON, no markdown fences, no explanation:\n{"protein":[],"produce":[],"grains":[],"dairy":[],"snacks":[]}';
-  fetch('https://theascensionprotocol.netlify.app/.netlify/functions/chat',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:'You are a meal planning assistant. Extract every ingredient from every meal listed. Respond only with valid JSON.',messages:[{role:'user',content:prompt}]})
-  }).then(function(r){return r.json();}).then(function(data){
-    try{
-      var txt=((data.content||[])[0]||{}).text||'';
-      txt=txt.trim().replace(/^```[a-z]*\n?/,'').replace(/\n?```$/,'').trim();
-      var gen=JSON.parse(txt);
-      if(Array.isArray(gen.protein)&&Array.isArray(gen.produce)&&Array.isArray(gen.grains)&&Array.isArray(gen.dairy)&&Array.isArray(gen.snacks)){
-        glc.generated=gen;
-        glc.generatedWeek=tw;
-        save();
-        cb(null,gen);
-      } else {cb(new Error('invalid'));}
-    }catch(e){console.error('Grocery list parse error:',e);cb(new Error('parse'));}
-  }).catch(function(){cb(new Error('network'));});
-}
-function _renderGroceryBody(gen){
+function _renderGroceryBody(){
   var labels={protein:'Protein',produce:'Produce',grains:'Grains & Carbs',dairy:'Dairy & Eggs',snacks:'Snacks & Other'};
   var chkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4L3.5 6.5L9 1"/></svg>';
-  var html='';
+  var html='<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="cb" onclick="resetGroceryChecks()" style="font-size:12px;color:var(--mu);padding:4px 10px;background:var(--s);border-radius:8px;border:1px solid var(--b)">Reset checks</button></div>';
   Object.keys(labels).forEach(function(cat){
-    var base=(gen[cat]||[]).filter(function(item,i){return !glc['del.'+cat+'.'+i];}).map(function(item,i){return glc['edit.'+cat+'.'+i]||item;});
-    html+='<div class="gl-sec"><div class="gl-sh">'+labels[cat]+'</div>';
     var customs=glc['custom.'+cat]||[];
     var allItems=[];
-    base.forEach(function(item,i){allItems.push({item:item,key:'gl.'+cat+'.'+i,type:'gen',idx:i});});
     customs.forEach(function(item,i){allItems.push({item:item,key:'gl.'+cat+'.c'+i,type:'custom',idx:i});});
     var unchecked=[],checked=[];
     allItems.forEach(function(obj){if(glc[obj.key])checked.push(obj);else unchecked.push(obj);});
+    html+='<div class="gl-sec"><div class="gl-sh">'+labels[cat]+'</div>';
+    if(!allItems.length){
+      html+='<div style="color:var(--mu);font-size:13px;padding:6px 2px 8px">Tap + to add items.</div>';
+    }
     unchecked.forEach(function(obj){
       var sk=obj.key.replace(/\./g,'-');
       html+='<div class="gl-item-wrap">'
-        +'<button class="gl-del-reveal-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">Delete</button>'
+        +'<button class="gl-del-reveal-btn" onclick="deleteGroceryItem(\''+cat+'\','+obj.idx+')">Delete</button>'
         +'<div class="gl-item" id="gli-'+sk+'">'
         +'<div class="gl-chk" onclick="toggleGrocery(\''+obj.key+'\')"></div>'
-        +'<span class="gl-name" onclick="openGroceryInlineEdit(this,\''+cat+'\',\''+obj.type+'\','+obj.idx+')">'+escHtml(obj.item)+'</span>'
+        +'<span class="gl-name" onclick="openGroceryInlineEdit(this,\''+cat+'\','+obj.idx+')">'+escHtml(obj.item)+'</span>'
         +'</div>'
-        +'<button class="hover-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')" tabindex="-1">×</button>'
+        +'<button class="hover-del-btn" onclick="deleteGroceryItem(\''+cat+'\','+obj.idx+')" tabindex="-1">×</button>'
         +'</div>';
     });
     if(checked.length){
@@ -656,12 +679,12 @@ function _renderGroceryBody(gen){
       checked.forEach(function(obj){
         var sk=obj.key.replace(/\./g,'-');
         html+='<div class="gl-item-wrap">'
-          +'<button class="gl-del-reveal-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')">Delete</button>'
+          +'<button class="gl-del-reveal-btn" onclick="deleteGroceryItem(\''+cat+'\','+obj.idx+')">Delete</button>'
           +'<div class="gl-item" id="gli-'+sk+'">'
           +'<div class="gl-chk on" onclick="toggleGrocery(\''+obj.key+'\')">'+chkSvg+'</div>'
           +'<span class="gl-name done">'+escHtml(obj.item)+'</span>'
           +'</div>'
-          +'<button class="hover-del-btn" onclick="deleteGroceryItem(\''+cat+'\',\''+obj.type+'\','+obj.idx+')" tabindex="-1">×</button>'
+          +'<button class="hover-del-btn" onclick="deleteGroceryItem(\''+cat+'\','+obj.idx+')" tabindex="-1">×</button>'
           +'</div>';
       });
       html+='</div>';
@@ -673,19 +696,14 @@ function _renderGroceryBody(gen){
   Object.keys(labels).forEach(function(cat){var inp=document.getElementById('glInp-'+cat);if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')addGroceryItem(cat);});});
   attachGrocerySwipe();
 }
+function resetGroceryChecks(){
+  Object.keys(glc).forEach(function(k){if(k.indexOf('gl.')===0)delete glc[k];});
+  save();renderGrocery();
+}
 function renderGrocery(){
   _glSwipedRow=null;
   document.getElementById('glWeekLabel').textContent=getNextWeekLabel();
   var tw=getGroceryTargetWeek();
-  // Friday 12pm EST auto-reset of check states
-  var today=todayKey();
-  var now=new Date();
-  var estHour=parseInt(now.toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false}),10);
-  if(now.getDay()===5&&estHour>=12&&glc.lastReset!==today){
-    Object.keys(glc).forEach(function(k){if(k!=='lastReset')delete glc[k];});
-    glc.lastReset=today;
-    save();
-  }
   // Reference card (always rendered synchronously)
   var refCard=document.getElementById('glRefCard');
   if(refCard){
@@ -721,19 +739,7 @@ function renderGrocery(){
     rc+='</div></div></div></div>';
     refCard.innerHTML=rc;
   }
-  // Use cached generation if available for this target week; otherwise generate
-  if(glc.generatedWeek===tw&&glc.generated){
-    _renderGroceryBody(glc.generated);
-  } else {
-    document.getElementById('glBody').innerHTML='<div style="text-align:center;padding:32px 0;color:var(--mu)">Building your grocery list…</div>';
-    generateGroceryList(tw,function(err,gen){
-      if(err){
-        document.getElementById('glBody').innerHTML='<div style="text-align:center;padding:24px 0"><div style="color:var(--mu);margin-bottom:12px">Couldn\'t generate list — tap to retry</div><button class="ok-btn" onclick="renderGrocery()">Retry</button></div>';
-        return;
-      }
-      _renderGroceryBody(gen);
-    });
-  }
+  _renderGroceryBody();
 }
 function toggleGroceryRefCard(){
   var open=localStorage.getItem('ac_grocery_card_open')==='true';
@@ -744,7 +750,7 @@ function toggleGroceryRefCard(){
   if(body)body.classList.toggle('open',open);
   if(chev)chev.classList.toggle('open',open);
 }
-function openGroceryInlineEdit(spanEl,cat,type,idx){
+function openGroceryInlineEdit(spanEl,cat,idx){
   if(_glSwipedRow){_glSnapBack();return;}
   var current=spanEl.textContent;
   var inp=document.createElement('input');
@@ -755,7 +761,7 @@ function openGroceryInlineEdit(spanEl,cat,type,idx){
   function commit(){
     if(committed)return;committed=true;
     var val=inp.value.trim();
-    if(val&&val!==current)editGroceryItem(cat,type,idx,val);
+    if(val&&val!==current){var customs=glc['custom.'+cat]||[];customs[idx]=val;glc['custom.'+cat]=customs;save();}
     renderGrocery();
   }
   inp.addEventListener('blur',commit);
@@ -786,16 +792,10 @@ function attachGrocerySwipe(){
 }
 function toggleGrocery(key){glc[key]=!glc[key];save();renderGrocery();}
 function addGroceryItem(cat){var inp=document.getElementById('glInp-'+cat);if(!inp)return;var v=inp.value.trim();if(!v)return;if(!glc['custom.'+cat])glc['custom.'+cat]=[];glc['custom.'+cat].push(v);save();renderGrocery();}
-function deleteGroceryItem(cat,type,idx){
+function deleteGroceryItem(cat,idx){
   _glSwipedRow=null;
-  if(type==='custom'){var customs=glc['custom.'+cat]||[];customs.splice(idx,1);glc['custom.'+cat]=customs;}
-  else{glc['del.'+cat+'.'+idx]=true;}
+  var customs=glc['custom.'+cat]||[];customs.splice(idx,1);glc['custom.'+cat]=customs;
   save();renderGrocery();
-}
-function editGroceryItem(cat,type,idx,val){
-  if(type==='custom'){var customs=glc['custom.'+cat]||[];customs[idx]=val;glc['custom.'+cat]=customs;}
-  else{glc['edit.'+cat+'.'+idx]=val;}
-  save();
 }
 
 // ── Protocol Guide ─────────────────────────────────────────────
