@@ -360,8 +360,18 @@ function renderGoals(){
       if(g.type==='Running'){
         var pace=_calcPace(g.distance,g.targetTime);
         if(g.distance)bodyFields+='<div class="goal-field"><div class="goal-label">Distance</div><div class="goal-value">'+escHtml(g.distance)+'</div></div>';
-        if(g.targetTime)bodyFields+='<div class="goal-field"><div class="goal-label">Target Time</div>'
-          +'<div class="goal-value" onclick="openTargetTimeSheet('+g.id+')" style="cursor:pointer;color:var(--a)">'+escHtml(g.targetTime)+'</div></div>';
+        if(g.targetTime){
+          bodyFields+='<div class="goal-field"><div class="goal-label">Target Time</div>'
+            +'<div class="goal-value" onclick="openTargetTimeSheet('+g.id+')" style="cursor:pointer;color:var(--a)">'+escHtml(g.targetTime)+'</div></div>';
+          if(_ttChangedId===g.id){
+            bodyFields+='<div style="margin:4px 0 10px;padding:12px;background:var(--s2);border-radius:10px;border:1px solid var(--b)">'
+              +'<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:8px">Target changed — adjust your plan?</div>'
+              +'<div style="display:flex;gap:8px">'
+              +'<button onclick="_ttPromptYes('+g.id+')" style="flex:1;padding:8px;background:var(--a);color:#1c1c1e;border-radius:8px;font-size:13px;font-weight:700">Yes</button>'
+              +'<button onclick="_ttPromptNo('+g.id+')" style="flex:1;padding:8px;background:var(--s3);color:var(--mu);border-radius:8px;font-size:13px;font-weight:600">No</button>'
+              +'</div></div>';
+          }
+        }
         if(pace)bodyFields+='<div class="goal-field"><div class="goal-label">Pace</div><div class="goal-value">'+pace+'</div></div>';
       } else if(g.type==='Lifting'){
         if(g.liftType){var liftLabel=(LIFTS.find(function(x){return x.k===g.liftType;})||{l:g.liftType}).l;bodyFields+='<div class="goal-field"><div class="goal-label">Lift</div><div class="goal-value">'+escHtml(liftLabel)+'</div></div>';}
@@ -407,6 +417,8 @@ function renderGoals(){
 }
 
 // ── Target time bottom sheet ───────────────────────────────────────────────
+var _ttChangedId = null;
+
 function openTargetTimeSheet(id){
   var g=goals.find(function(x){return x.id===id;});if(!g)return;
   var overlay=document.createElement('div');
@@ -414,28 +426,54 @@ function openTargetTimeSheet(id){
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end';
   var sheet=document.createElement('div');
   sheet.style.cssText='width:100%;background:var(--s);border-radius:20px 20px 0 0;padding:24px 20px 40px;box-sizing:border-box';
-  sheet.innerHTML='<div style="text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:12px">Target Time</div>'
-    +'<div style="font-family:var(--fd);font-size:40px;font-weight:600;color:var(--a);text-align:center;margin-bottom:16px">'+escHtml(g.targetTime||'—')+'</div>'
-    +'<p style="font-size:14px;color:var(--t2);text-align:center;line-height:1.6;margin-bottom:20px">Adjust your training plan for this target?</p>'
-    +'<div style="display:flex;flex-direction:column;gap:10px">'
-    +'<button onclick="_openGoalAdjustFromSheet('+id+')" style="padding:14px;background:var(--a);color:#1c1c1e;border-radius:12px;font-size:15px;font-weight:700">'+(g.plan?'Adjust Plan':'Generate Plan')+'</button>'
-    +'<button onclick="closeTargetTimeSheet()" style="padding:14px;background:var(--s2);color:var(--mu);border-radius:12px;font-size:15px;font-weight:600">Dismiss</button>'
-    +'</div>';
+  sheet.innerHTML='<div style="text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--mu);margin-bottom:16px">Target Time</div>'
+    +'<input id="ttTimeInp" class="gf-inp" type="text" inputmode="text" placeholder="MM:SS or H:MM:SS" value="'+escHtml(g.targetTime||'')+'" style="text-align:center;font-size:20px;font-weight:600;margin-bottom:16px">'
+    +'<button onclick="_saveTargetTime('+id+')" style="width:100%;padding:14px;background:var(--a);color:#1c1c1e;border-radius:12px;font-size:15px;font-weight:700">Save</button>';
   overlay.appendChild(sheet);
   overlay.addEventListener('click',function(e){if(e.target===overlay)closeTargetTimeSheet();});
   document.body.appendChild(overlay);
+  setTimeout(function(){var inp=document.getElementById('ttTimeInp');if(inp){inp.focus();inp.select();}},50);
 }
 function closeTargetTimeSheet(){
   var el=document.getElementById('ttSheet');if(el)el.parentNode.removeChild(el);
 }
-function _openGoalAdjustFromSheet(id){
+function _saveTargetTime(id){
+  var g=goals.find(function(x){return x.id===id;});if(!g)return;
+  var inp=document.getElementById('ttTimeInp');
+  var val=inp?inp.value.trim():'';
   closeTargetTimeSheet();
+  if(!val||val===g.targetTime)return;
+  g.targetTime=val;
+  g.target=val;
+  save();
+  _ttChangedId=id;
   _goalOpenIds[id]=true;
   renderGoals();
+}
+function _ttPromptNo(id){
+  _ttChangedId=null;
+  renderGoals();
+}
+function _ttPromptYes(id){
+  _ttChangedId=null;
   var g=goals.find(function(x){return x.id===id;});if(!g)return;
+  _goalOpenIds[id]=true;
+  renderGoals();
   setTimeout(function(){
-    if(g.plan)toggleAdjustPlan(id);
-    else generateGoalPlan(id);
+    if(g.plan){
+      var panel=document.getElementById('gadjust-'+id);
+      if(panel){
+        panel.style.display='block';
+        var ta=document.getElementById('gadjust-ta-'+id);
+        if(ta){
+          ta.value=(g.adjustment?g.adjustment+'\n':'')+'Add notes about your updated target here...';
+          ta.focus();
+          ta.scrollIntoView({behavior:'smooth',block:'nearest'});
+        }
+      }
+    } else {
+      generateGoalPlan(id);
+    }
   },50);
 }
 

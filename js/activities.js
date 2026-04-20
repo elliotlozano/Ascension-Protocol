@@ -191,12 +191,21 @@ function _fmtTime(sec) {
 }
 
 // ── PR auto-sync ──────────────────────────────────────────────
+var _STRAVA_NAME_MAP = {
+  '1 mile':   'mile',  '1 Mile':   'mile',
+  '2 mile':   'twomile','2 Mile':  'twomile',
+  '2 miles':  'twomile','2 Miles': 'twomile',
+  '1.5 mile': 'twomile','1.5 Mile':'twomile',
+  '5k':       'fivek',  '5K':      'fivek'
+};
+
 function _syncStravaRunPRs(token) {
   var runs = stravaActivities.filter(function(a) { return a.type === 'Run'; }).slice(0, 10);
   if (!runs.length) return;
 
   var pending = runs.length;
-  var changed = false;
+  // Collect all Strava efforts per distance key across all activities before merging
+  var collected = {};
 
   runs.forEach(function(act) {
     fetch(_NETLIFY_BASE + '/.netlify/functions/strava-activities', {
@@ -207,60 +216,67 @@ function _syncStravaRunPRs(token) {
     .then(function(r) { return r.json(); })
     .then(function(detail) {
       if (detail.best_efforts && Array.isArray(detail.best_efforts)) {
-        if (_processStravaEfforts(detail.best_efforts, act.start_date_local || act.start_date)) {
-          changed = true;
-        }
-      }
-      pending--;
-      if (pending === 0 && changed) {
-        save();
-        var pM = document.getElementById('pM');
-        if (pM && pM.classList.contains('on')) renderMetrics();
+        _collectStravaEfforts(detail.best_efforts, act.start_date_local || act.start_date, collected);
       }
     })
-    .catch(function() { pending--; });
+    .catch(function() {})
+    .then(function() {
+      pending--;
+      if (pending === 0) {
+        var changed = _mergeStravaIntoPRs(collected);
+        if (changed) {
+          save();
+          var pM = document.getElementById('pM');
+          if (pM && pM.classList.contains('on')) renderMetrics();
+        }
+      }
+    });
   });
 }
 
-function _processStravaEfforts(efforts, actDate) {
-  _migratePrs();
-  var changed = false;
+function _collectStravaEfforts(efforts, actDate, collected) {
   var d = new Date(actDate || '');
-  var dateStr = isNaN(d.getTime()) ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  var dateStr = isNaN(d.getTime())
+    ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  var NAME_MAP = {
-    '1 mile':   'mile',
-    '1 Mile':   'mile',
-    '2 mile':   'twomile',
-    '2 Mile':   'twomile',
-    '2 miles':  'twomile',
-    '2 Miles':  'twomile',
-    '1.5 mile': 'twomile',
-    '1.5 Mile': 'twomile',
-    '5k':       'fivek',
-    '5K':       'fivek'
-  };
-
   efforts.forEach(function(effort) {
-    var prKey = NAME_MAP[effort.name];
+    var prKey = _STRAVA_NAME_MAP[effort.name];
     if (!prKey) return;
     var effortSec = effort.elapsed_time || 0;
     if (!effortSec) return;
-
     var m = Math.floor(effortSec / 60);
     var s = effortSec % 60;
     var timeStr = m + ':' + (s < 10 ? '0' : '') + s;
+    if (!collected[prKey]) collected[prKey] = [];
+    collected[prKey].push({ v: timeStr, d: dateStr, strava: true });
+  });
+}
 
-    var existing = prs[prKey] || [];
-    var bestExisting = existing.length ? _parsePRMinutes(existing[0].v) : Infinity;
-    var newVal = _parsePRMinutes(timeStr);
+function _mergeStravaIntoPRs(collected) {
+  _migratePrs();
+  var changed = false;
 
-    if (newVal < bestExisting) {
-      if (!prs[prKey]) prs[prKey] = [];
-      prs[prKey].unshift({ v: timeStr, d: dateStr, strava: true });
-      prs[prKey].sort(function(a, b) { return _parsePRMinutes(a.v) - _parsePRMinutes(b.v); });
-      prs[prKey] = prs[prKey].slice(0, 3);
+  Object.keys(collected).forEach(function(prKey) {
+    var existing = (prs[prKey] || []).slice();
+    var combined = existing.concat(collected[prKey]);
+
+    // Sort best-first (lowest time = best for runs)
+    combined.sort(function(a, b) { return _parsePRMinutes(a.v) - _parsePRMinutes(b.v); });
+
+    // Deduplicate by value+date
+    var seen = {};
+    var deduped = combined.filter(function(e) {
+      var key = e.v + '|' + e.d;
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+
+    var top3 = deduped.slice(0, 3);
+
+    if (JSON.stringify(prs[prKey] || []) !== JSON.stringify(top3)) {
+      prs[prKey] = top3;
       changed = true;
     }
   });

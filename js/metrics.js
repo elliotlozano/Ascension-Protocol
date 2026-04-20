@@ -84,9 +84,11 @@ function renderPRCard(){
     if(isExp){
       html+='<div class="pr-ex-body">';
       entries.forEach(function(entry,i){
+        var rankCls=['gold','silver','bronze'][i]||'bronze';
         html+='<div class="pr-entry-wrap" id="prewrap-'+item.k+'-'+i+'">'
           +'<button class="pr-del-btn" onclick="deletePREntry(\''+item.k+'\','+i+')">Delete</button>'
           +'<div class="pr-entry-row" id="prererow-'+item.k+'-'+i+'">'
+          +'<span class="ach-rank '+rankCls+'" style="min-width:26px;font-size:11px">#'+(i+1)+'</span>'
           +'<span class="pr-entry-val">'+escHtml(entry.v)+unit+'</span>'
           +'<span class="pr-entry-date">'+escHtml(entry.d)+'</span>'
           +'</div></div>';

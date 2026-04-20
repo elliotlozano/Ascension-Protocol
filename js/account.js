@@ -260,8 +260,9 @@ function computeEarnedBadges() {
 
   // FITNESS: Running
   if (ach.fivek && ach.fivek.length > 0) earned['finisher_5k'] = true;
-  if (prs.mile) {
-    var sec = timeToSec(prs.mile.v);
+  var _mileEntry = prs.mile ? (Array.isArray(prs.mile) ? prs.mile[0] : prs.mile) : null;
+  if (_mileEntry && _mileEntry.v) {
+    var sec = timeToSec(_mileEntry.v);
     MILE_TIERS.forEach(function(t) { if (sec < t.sec) earned[t.id] = true; });
   }
   var maxMiles = 0;
@@ -269,9 +270,11 @@ function computeEarnedBadges() {
   MILES_TIERS.forEach(function(t) { if (maxMiles >= t.miles) earned[t.id] = true; });
 
   // FITNESS: Lifting
-  var benchVal = prs.bench ? parseFloat(prs.bench.v) : 0;
+  var _benchEntry = prs.bench ? (Array.isArray(prs.bench) ? prs.bench[0] : prs.bench) : null;
+  var benchVal = _benchEntry ? parseFloat(_benchEntry.v) : 0;
   BENCH_BADGES.forEach(function(b) { if (benchVal >= b.minLbs) earned[b.id] = true; });
-  var squatVal = prs.squat ? parseFloat(prs.squat.v) : 0;
+  var _squatEntry = prs.squat ? (Array.isArray(prs.squat) ? prs.squat[0] : prs.squat) : null;
+  var squatVal = _squatEntry ? parseFloat(_squatEntry.v) : 0;
   var bodyWt = parseFloat(bio.weight) || 0;
   if (squatVal > 0 && bodyWt > 0 && squatVal >= bodyWt) earned['squat_bw'] = true;
   if (squatVal >= 225) earned['squat_225'] = true;
