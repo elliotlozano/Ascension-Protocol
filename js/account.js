@@ -368,9 +368,12 @@ function renderAchievements() {
   var consecWeeks = getMaxConsecWeeks(90);
   var maxMiles    = 0;
   Object.keys(weekMiles).forEach(function(k){ if(weekMiles[k]>maxMiles) maxMiles=weekMiles[k]; });
-  var mileSec     = prs.mile ? timeToSec(prs.mile.v) : null;
-  var benchVal    = prs.bench ? parseFloat(prs.bench.v) : 0;
-  var squatVal    = prs.squat ? parseFloat(prs.squat.v) : 0;
+  var _mileE  = prs.mile  ? (Array.isArray(prs.mile)  ? prs.mile[0]  : prs.mile)  : null;
+  var mileSec = _mileE && _mileE.v ? timeToSec(_mileE.v) : null;
+  var _benchE = prs.bench ? (Array.isArray(prs.bench) ? prs.bench[0] : prs.bench) : null;
+  var benchVal = _benchE ? parseFloat(_benchE.v) : 0;
+  var _squatE = prs.squat ? (Array.isArray(prs.squat) ? prs.squat[0] : prs.squat) : null;
+  var squatVal = _squatE ? parseFloat(_squatE.v) : 0;
   var monthsElapsed = Math.floor((new Date() - PROTO_START) / (30.44 * 24 * 3600 * 1000));
 
   // Tab badge counts
