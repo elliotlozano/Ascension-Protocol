@@ -12,7 +12,7 @@ function showSavedFlash(el,msg){
 
 // ── Tab management with sessionStorage persistence (feature 6) ─
 function selTab(t){
-  ['P','R','M','A'].forEach(function(x){
+  ['P','R','M','A','A5'].forEach(function(x){
     document.getElementById('p'+x).className='pane'+(x===t?' on':'');
     document.getElementById('db-'+x).className='db'+(x===t?' on':'');
   });
@@ -36,6 +36,16 @@ function selTab(t){
   }
   if(t==='A'){renderSettings();showPage('pageMain');}
   if(t==='R'){renderMission();renderGoals();}
+  if(t==='A5'){renderActivities();}
+}
+
+function showStravaToast(msg){
+  var t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#FC4C02;color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:20px;z-index:999;opacity:1;transition:opacity .4s ease;white-space:nowrap;box-shadow:0 4px 16px rgba(252,76,2,.4)';
+  document.body.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';},2000);
+  setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2500);
 }
 
 function toggleTheme(){
@@ -94,8 +104,20 @@ function launchApp(){
     startRealtimeSync();
     // Restore active tab from sessionStorage
     var savedTab=sessionStorage.getItem('ac_tab');
-    if(savedTab && ['P','R','M','A'].indexOf(savedTab)!==-1){
+    if(savedTab && ['P','R','M','A','A5'].indexOf(savedTab)!==-1){
       selTab(savedTab);
+    }
+    // Check for Strava OAuth callback success
+    var urlParams=new URLSearchParams(window.location.search);
+    if(urlParams.get('strava_connected')==='true'){
+      history.replaceState(null,'',window.location.pathname);
+      // Reload Strava state from localStorage after callback set it
+      stravaToken=localStorage.getItem('ac_strava_tok')||null;
+      stravaRefreshToken=localStorage.getItem('ac_strava_rtok')||null;
+      stravaExpiry=parseInt(localStorage.getItem('ac_strava_exp')||'0',10);
+      stravaAthleteId=localStorage.getItem('ac_strava_uid')||null;
+      stravaAthleteName=localStorage.getItem('ac_strava_name')||null;
+      showStravaToast('Strava connected');
     }
   });
 }

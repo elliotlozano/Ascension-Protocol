@@ -483,3 +483,13 @@ body.D .g-nu{background:#7a9e8728;color:#8fc09e}body.D .g-gy{background:#6b8cae2
 .gf-emoji-opt{font-size:20px;padding:6px;border-radius:8px;text-align:center;cursor:pointer;transition:background var(--tr)}
 .gf-emoji-opt:active,.gf-emoji-opt.on{background:var(--as)}
 .gf-pace-display{font-size:13px;font-weight:600;color:var(--a);padding:5px 0}
+
+/* ── Strava / Activities tab ── */
+.strava-card{position:relative;overflow:hidden}
+.strava-watermark{position:absolute;top:10px;right:13px;font-size:11px;font-weight:700;color:#FC4C02;opacity:.3;letter-spacing:.05em;pointer-events:none;user-select:none}
+.strava-connect-btn{background:#FC4C02;color:#fff;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(252,76,2,.35);transition:opacity .2s}
+.strava-connect-btn:active{opacity:.85}
+.strava-disconnect{font-size:12px;color:var(--mu);font-weight:600;padding:4px 10px;background:var(--s2);border-radius:8px;border:1px solid var(--b)}
+.activities-header{display:flex;align-items:center;justify-content:space-between;padding:0 0 14px;margin-bottom:2px}
+.strava-spinner{width:36px;height:36px;border:3px solid rgba(252,76,2,.2);border-top-color:#FC4C02;border-radius:50%;animation:strava-spin .7s linear infinite}
+@keyframes strava-spin{to{transform:rotate(360deg)}}

@@ -29,6 +29,14 @@ var earnedBadges = JSON.parse(localStorage.getItem('ac_badges') || '[]');
 var macros     = JSON.parse(localStorage.getItem('ac_macros')  || '{}');
 var macroCache = JSON.parse(localStorage.getItem('ac_mcache')  || '{}');
 
+var stravaToken        = localStorage.getItem('ac_strava_tok')  || null;
+var stravaRefreshToken = localStorage.getItem('ac_strava_rtok') || null;
+var stravaExpiry       = parseInt(localStorage.getItem('ac_strava_exp')  || '0', 10);
+var stravaAthleteId    = localStorage.getItem('ac_strava_uid')  || null;
+var stravaAthleteName  = localStorage.getItem('ac_strava_name') || null;
+var stravaActivities   = JSON.parse(localStorage.getItem('ac_strava_acts') || '[]');
+var stravaLastFetch    = parseInt(localStorage.getItem('ac_strava_last') || '0', 10);
+
 var cProtoMonth = 1;
 var cW = 1;
 var cD = 'Monday';
@@ -48,9 +56,35 @@ function save() {
   localStorage.setItem('ac_wscores', JSON.stringify(weekScores));
   localStorage.setItem('ac_wmiles',  JSON.stringify(weekMiles));
   localStorage.setItem('ac_badges',  JSON.stringify(earnedBadges));
-  localStorage.setItem('ac_macros',  JSON.stringify(macros));
-  localStorage.setItem('ac_mcache',  JSON.stringify(macroCache));
+  localStorage.setItem('ac_macros',      JSON.stringify(macros));
+  localStorage.setItem('ac_mcache',      JSON.stringify(macroCache));
+  localStorage.setItem('ac_strava_acts', JSON.stringify(stravaActivities));
+  localStorage.setItem('ac_strava_last', String(stravaLastFetch));
   sbWrite();
+}
+
+function isStravaConnected() {
+  return !!(stravaToken && stravaExpiry > Math.floor(Date.now() / 1000));
+}
+
+function refreshStravaIfNeeded(cb) {
+  if (!stravaToken) { cb(new Error('not_connected')); return; }
+  if (stravaExpiry > Math.floor(Date.now() / 1000)) { cb(null, stravaToken); return; }
+  fetch('https://theascensionprotocol.netlify.app/.netlify/functions/strava-refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: stravaRefreshToken })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.error) { cb(new Error(d.error)); return; }
+    stravaToken  = d.access_token;
+    stravaExpiry = d.expires_at;
+    localStorage.setItem('ac_strava_tok', stravaToken);
+    localStorage.setItem('ac_strava_exp', String(stravaExpiry));
+    cb(null, stravaToken);
+  })
+  .catch(function(e) { cb(e); });
 }
 
 function authHeaders() {

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connecting Strava…</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1c1c1e;color:#f2f2f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;padding:24px}
+  .wrap{text-align:center;max-width:320px}
+  .icon{margin-bottom:24px}
+  .title{font-size:22px;font-weight:700;margin-bottom:8px}
+  .sub{font-size:15px;color:#8e8e93;line-height:1.5}
+  .err{color:#c0504a}
+  .spinner{width:40px;height:40px;border:3px solid rgba(252,76,2,.2);border-top-color:#FC4C02;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="spinner" id="spinner"></div>
+  <div class="title">Connecting Strava</div>
+  <div class="sub">Completing authentication…</div>
+</div>
+<script>
+(function(){
+  var NETLIFY_BASE = 'https://theascensionprotocol.netlify.app';
+  var APP_URL = 'https://elliotlozano.github.io/Ascension-Protocol/';
+
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code');
+  var error = params.get('error');
+
+  if (error || !code) {
+    showError(error === 'access_denied' ? 'Access denied. You can close this tab.' : 'Authorization failed. Please try again.');
+    return;
+  }
+
+  fetch(NETLIFY_BASE + '/.netlify/functions/strava-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data.error) { showError(data.error); return; }
+    localStorage.setItem('ac_strava_tok',  data.access_token);
+    localStorage.setItem('ac_strava_rtok', data.refresh_token);
+    localStorage.setItem('ac_strava_exp',  String(data.expires_at));
+    if (data.athlete) {
+      localStorage.setItem('ac_strava_uid',  String(data.athlete.id));
+      localStorage.setItem('ac_strava_name', (data.athlete.firstname || '') + ' ' + (data.athlete.lastname || '').trim());
+    }
+    window.location.href = APP_URL + '?strava_connected=true';
+  })
+  .catch(function(e){ showError('Connection error: ' + e.message); });
+
+  function showError(msg) {
+    document.getElementById('spinner').style.display = 'none';
+    var wrap = document.getElementById('wrap');
+    wrap.innerHTML = '<div class="icon"><svg viewBox="0 0 24 24" style="width:48px;height:48px"><path d="M13 2 L3 14 H12 L11 22 L21 10 H12 Z" fill="#FC4C02"/></svg></div>'
+      + '<div class="title err">Connection Failed</div>'
+      + '<div class="sub" style="margin-top:8px">' + msg + '</div>';
+  }
+})();
+</script>
+</body>
+</html>
